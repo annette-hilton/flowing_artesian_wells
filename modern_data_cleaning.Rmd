@@ -1,0 +1,76 @@
+---
+title: "Modern Well Records (~2010-2020)"
+author: "Annette Hilton"
+date: "11/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Continental USA modern data & analysis 
+
+## Attach Packages
+
+```{r}
+# Attach packages 
+
+library(parzer)
+library(Rcpp)
+library(tidyverse)
+library(here)
+library(janitor)
+library(purrr)
+library(broom)
+library(tibble)
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+library(data.table)
+
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+# Read in Data
+
+```{r}
+# Read in the full dataset for all well water measurements for the USA 
+
+entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usgs_usa.txt"))
+```
+# Tidy Data 
+
+- Remove wells without well depth 
+- Remove wells with zero depth 
+- Remove wells without a water level 
+- Keep records only from 2010 and later 
+- Calculate median water level for that time period 
+- Indicate artesian conditions
+
+```{r}
+usgs_modern <- entire_usa_gw %>% 
+  filter(!well_depth_va == "NA" | !hole_depth_va == "NA") %>% 
+  filter(!well_depth_va == 0.00) %>% 
+  filter(!lev_dt == "NA") %>%
+  filter(!is.na(lev_va)) %>% 
+  filter(level_year >= 2010)
+  
+
+usgs_modern_med <- usgs_modern %>% 
+  group_by(site_no) %>% 
+  mutate(median = median(lev_va)) %>% 
+  distinct(site_no, .keep_all = TRUE) %>% 
+  mutate(artesian = ifelse(lev_va <= 0, 1, 0))
+
+usgs_modern_med$site_no <- sub("^", "w", usgs_modern_med$site_no)
+
+write_tsv(usgs_modern_med, here::here("output_data", "usgs_modern.txt"))
+```
+
+
+
+

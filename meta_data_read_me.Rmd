@@ -1,0 +1,26 @@
+---
+title: "Meta Data"
+author: "Annette Hilton"
+date: "8/4/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Vertical hydraulic gradients shift over 100 years
+## A comparison of vertical hydraulic gradients from the early 1900s to 2010-2020 
+
+
+# 
+
+## Purpose & Objectives 
+
+The purpose of this project is to compare vertical hydraulic gradients from the early 1900s to present day (~2010-2020). 
+
+
+## Data Sources 
+
+
+

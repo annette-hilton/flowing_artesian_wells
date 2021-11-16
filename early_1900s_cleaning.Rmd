@@ -1,0 +1,229 @@
+---
+title: "Early Well Records (~1880-1910) Data Cleaning"
+author: "Annette Hilton"
+date: "11/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Continental USA early 1900s Data & Analysis 
+
+## Attach Packages
+
+```{r}
+# Attach packages 
+
+library(parzer)
+library(Rcpp)
+library(tidyverse)
+library(here)
+library(janitor)
+library(purrr)
+library(broom)
+library(tibble)
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+library(data.table)
+
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+# Read in Data
+
+## Early Well Data Sources 
+
+1) Early 1900s CV wells data: manually compiled by Jasechko lab, 2021 (June-October) 
+  - Darton, 1905
+  - Fuller, 1905
+  - Fuller, 1906
+  - Crider & Johnson, 1906
+  - Veatch, 1906 
+  
+2) Mendenhall et al., 1916 (https://www.sciencebase.gov/catalog/item/58923e21e4b072a7ac143c11)
+
+3) USGS Groundwater Wells (See Rproject 'usa_groundwater_data' by Hilton for more details)
+
+### 1--Early data from Jasechko lab 
+
+```{r}
+# Specify NA values 
+
+na_values <- c("na", "Na", "NA")
+
+# early 1900s data 
+# specify each column type 
+# specify how to deal with NAs 
+
+jl_early1900s_raw <- readr::read_tsv(here::here("data", "1900s_wells.txt"), 
+                                     col_types = list(
+                                       id = col_character(),
+                                       state = col_character(), 
+                                       county = col_character(), 
+                                       city = col_character(), 
+                                       specific_location = col_character(), 
+                                       township = col_character(), 
+                                       range = col_character(), 
+                                       section = col_character(), 
+                                       Latitude = col_double(), 
+                                       Longitude = col_double(), 
+                                       min_depth_ft = col_double(), 
+                                       max_depth_ft = col_double(), 
+                                       depth_sign = col_character(), 
+                                       depth_text = col_character(), 
+                                       min_height_water_ft = col_double(), 
+                                       max_height_water_ft = col_double(), 
+                                       height_water_text = col_character(), 
+                                       remarks = col_character(), 
+                                       citation = col_character()
+                                     ), 
+                                     na = na_values)
+```
+
+### 2-- Mendenhall et al., 1916 
+
+```{r}
+mendenhall_raw <- readr::read_tsv(here::here("data", "mendenhall_cv_wells.txt")) %>% 
+  clean_names()
+```
+
+### 3---USGS Groundwater Wells 
+
+
+```{r}
+# Read in the full dataset for all well water measurements for the USA 
+
+entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usgs_usa.txt"))
+```
+
+
+# Tidy Data 
+
+- Lowercase/clean names
+- Remove extra blank columns 
+- Remove values without well depth value/depth is zero & no static water level 
+- Remove values without a lat/long 
+- Rename columns to be consistent with other data frames 
+- Add artesian conditions/columns 
+
+
+### 1-- Early 1900s Jasechko Lab 
+
+```{r}
+early_1900s_tidy <- jl_early1900s_raw %>% 
+  clean_names() %>% 
+  select(-x20:-x46) %>% 
+  filter(!is.na(max_depth_ft),
+         !is.na(latitude)) %>% 
+  filter(!(is.na(max_height_water_ft) & is.na(height_water_text)), 
+         !height_water_text %in% c("+-", "+", "-")) %>% 
+  rename(well_depth_ft = max_depth_ft, 
+         water_level_ft = max_height_water_ft) %>% 
+  mutate(artesian = ifelse(water_level_ft >= 0 | !is.na(height_water_text), 1, 0))
+
+early_1900s_tidy$id<- sub("^", "w", early_1900s_tidy$id)
+
+```
+
+### 2-- Mendenhall et al., 1916
+
+```{r}
+mendenhall_tidy <- mendenhall_raw %>% 
+  rename(id = site_id, 
+         latitude = lat_dd, 
+         longitude = long_dd, 
+         water_level_ft = water_depth_ft) %>% 
+  mutate(artesian = ifelse(water_level_ft == 0, 1, 0))
+
+mendenhall_tidy$id <- sub("^", "w", mendenhall_tidy$id)
+```
+
+### 3-- USGS Groundwater Wells 
+
+(Guess that negative number indicates artesian condition--emailed USGS to be sure)
+
+```{r}
+# Entire USGS groundwater well data until fall 2019 (last updated) 
+
+usa_early <- entire_usa_gw %>% 
+  filter(!well_depth_va == "NA" | !hole_depth_va == "NA") %>% 
+  filter(!well_depth_va == 0.00) %>% 
+  filter(!lev_dt == "NA") %>% 
+  filter(!level_year >1906) %>% 
+  filter(!is.na(lev_va))
+
+# Find median water level for wells that have more than one measurement per year 
+
+early_usgs_med <- usa_early %>% 
+  group_by(site_no) %>% 
+  mutate(median = median(lev_va)) %>% 
+  distinct(site_no, .keep_all = TRUE) %>% 
+  rename(id = site_no, 
+         latitude = dec_lat_va, 
+         longitude = dec_long_va, 
+         well_depth_ft = well_depth_va, 
+         water_level_ft = lev_va) %>% 
+  mutate(artesian = ifelse(water_level_ft <= 0, 1, 0))
+
+early_usgs_med$id <- sub("^", "w", early_usgs_med$id)
+  
+```
+
+
+# Prepare for Analysis 
+
+1. Join data frames (id, lat, long, well depth, water level) 
+2. Find deep wells (100 m/328 ft or greater)
+3. Find deep wells that are also artesian 
+4. Export to ArcGIS 
+
+```{r}
+# Join data frames 
+# First tidy for join 
+
+join_jl <- early_1900s_tidy %>% 
+  select(id, latitude, longitude, well_depth_ft, water_level_ft, artesian)
+
+join_mendenhall <- mendenhall_tidy %>% 
+  select(id, latitude, longitude, well_depth_ft, water_level_ft, artesian)
+
+join_usgs <- early_usgs_med %>% 
+  select(id, latitude, longitude, well_depth_ft, water_level_ft, artesian)
+```
+
+```{r}
+# Join data frames 
+
+early1900s_all <- rbind(join_jl, join_mendenhall, join_usgs)
+```
+
+```{r}
+# Tidy data 
+# Remove data without well depth 
+# Remove data without well water level (artesian) 
+# Constrain by well depth (100 m) 
+
+early1900s_arc <- early1900s_all %>% 
+  filter(!is.na(well_depth_ft), 
+         !is.na(artesian), 
+         !well_depth_ft <= 328) 
+  
+```
+
+
+Write as tsv for ArcGIS 
+
+```{r}
+# Write now-cleaned data as text file for ArcGIS
+
+write_tsv(early1900s_arc, here::here("output_data", "early1900s_arc.txt"))
+```
+
+
+
