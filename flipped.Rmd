@@ -1,0 +1,110 @@
+---
+title: "Flipped VHG"
+author: "Annette Hilton"
+date: "11/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Attach Packages
+
+```{r}
+# Attach packages 
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(purrr)
+library(broom)
+library(tibble)
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+library(data.table)
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+# Methods & Data Sources
+
+## Read in data 
+
+Specify column type for "arc_artesian" to avoid NA values 
+
+```{r}
+
+spear_modern <- readr::read_csv(here::here("output_data", "spear_modernzones.txt"))
+
+wells_total <- readr::read_tsv(here::here("output_data", "wells_total_n.txt")) %>% 
+  distinct(id, .keep_all = TRUE)
+```
+
+## Data Analysis 
+
+1. Join tables by township range 
+2. Determine if VHG flipped 
+
+```{r}
+# join dataframes 
+# tidy & rename columns 
+
+joined_usa <- wells_total %>% 
+  left_join(spear_modern, by = "id")
+
+# mutate new columns for spearman correlation being "up" or "down" 
+# mutate new column for flipped/change 
+
+flipped <- joined_usa %>% 
+  mutate(flipped = case_when(artesian == 1 & artesian_id == "artesian" ~"still_artesian",
+                             artesian == 0 & artesian_id == "artesian" ~"pressurized",
+                             artesian == 1 & estimate > 0 ~"still_pressurized",
+                             artesian == 1 & estimate < 0 ~"depressurized",
+                             artesian == 0 & estimate < 0 ~"still_depressurized", 
+                             artesian == 0 & estimate > 0 ~"pressurized"))
+
+
+```
+
+Extra
+
+```{r}
+down_shift <- flipped_distinct %>% 
+  filter(flipped == "down_shift")
+
+still_up <- flipped_distinct %>% 
+  filter(flipped == "still_up")
+
+up_shift <- flipped_distinct %>% 
+  filter(flipped == "upshift")
+
+still_down <- flipped_distinct %>% 
+  filter(flipped == "still_down")
+
+originally_up <- flipped_distinct %>% 
+  filter(vhg_1900s == "up" & !is.na(flipped))
+
+originally_down <- flipped_distinct %>% 
+  filter(vhg_1900s == "down")
+```
+
+
+ Write to csv file 
+ 
+```{r}
+write_csv(flipped, here::here("output_data", "flipped.txt"))
+```
+
+Arc Instructions: 
+
+1. Import datafiles 
+2. Join text files with PLSS file 
+3. Create shapefiles individual (1900s and 2000s) 
+4. Dissolve shapefile by township ra
+5. Join with original file 
+

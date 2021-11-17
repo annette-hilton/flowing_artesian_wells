@@ -76,6 +76,8 @@ Add criteria:
 1. Each original 1900s well must have at least 3 modern wells associated 
 
 2. Make sure each original well has at least one well that is more shallow and one well that is deeper than it 
+
+3. Remove artesian wells if the artesian conditions are more than 50% of all wells in the area zone 
  
 
 ```{r}
@@ -92,6 +94,45 @@ Add criteria:
 
 ```
 
+```{r}
+# 3. Artesian wells 
+
+# Group by ID 
+# Add counts for total number of wells in township
+# Add counts for total number of artesian wells in each township 
+# Add percentage of artesian wells per township 
+
+wells_total_n <- wells_criteria %>% 
+  group_by(id) %>% 
+  add_count(id) %>% 
+  add_tally(artesian_1 == 1, name = "art_n") %>% 
+  mutate(percent = (art_n/n)) %>% 
+  mutate(artesian_id = ifelse(percent > 0.5, "artesian", NA))
+
+write_tsv(wells_total_n, here::here("output_data", "wells_total_n.txt"))
+
+# Add criteria of 50% or greater artesian are removed 
+
+no_artesian <- wells_total_n %>% 
+  group_by(id) %>% 
+  filter(!percent > 0.5)
+
+# Keep all artesian well townships 
+
+all_artesian <- wells_total_n %>% 
+  group_by(id) %>% 
+  filter(percent > 0.5)
+
+# # Write artesian file for Arc 
+# 
+# artesian_arc <- all_artesian %>% 
+#   mutate(arc_artesian = "artesian") %>% 
+#   distinct(id, .keep_all = TRUE)
+# 
+# write_csv(artesian_arc, here::here("output_data", "artesian_arc.txt"))
+
+```
+
 ## Statistical tests 
 
 ### Methods step 6. 
@@ -101,71 +142,79 @@ Spearman rank correlation method calculates the correlation between the ranks of
 Variable: Depth of well (well_depth)
 Variable: Water level (water_leve)
 
-```{r}
-# Use lapply() and split() to split the dataframe by "id" (original early 1900s well) and then iterate the cor.test function for each group (one original 1900s well and modern wells associated) 
 
-spearman<- lapply(
-  split(wells_criteria, wells_criteria$id), 
-  function(wells_criteria) cor.test(
-   wells_criteria$well_dep_1, wells_criteria$median, method = "spearman"))
+IMPORTANT NOTE: Something is going on with cor.test(), does not work. cor() does work. Error: "not enough finite values" Have thoroughly investigated and do not understand. 
+
+```{r}
+# Use lapply() and split() to split the dataframe by "id" (original early 1900s well) and then iterate the cor.test function for each group (one original 1900s well and modern wells associated)
+
+# spearman <- lapply(split(no_artesian, f = no_artesian$id), function(no_artesian) cor.test(no_artesian$median, no_artesian$well_dep_1, method = "spearman", exact = FALSE))
+
+spearman <- lapply(split(no_artesian, f = no_artesian$id), function(no_artesian) cor(no_artesian$median, no_artesian$well_dep_1, method = "spearman"))
 
 # Bind results together in a dataframe and indicate the id (rownames_to_column())
 
 results <- as.data.frame(do.call(rbind, spearman)) %>% 
   rownames_to_column(var = "id") %>% 
-  select(id, p.value, estimate)
+  rename(estimate = V1)
+# 
+# results <- as.data.frame(do.call(rbind, spearman)) %>% 
+#   rownames_to_column(var = "id") %>% 
+#   select(id, p.value, estimate)
 
 # Remove character string in estimate column (rho)
 # Make sure p-value is numeric 
 
-results$estimate <- gsub("[a-z = ()]", "", results$estimate)
-results$p.value <- as.numeric(results$p.value)
-results$id <- as.numeric(results$id)
+# results$estimate <- gsub("[a-z = ()]", "", results$estimate)
+# results$p.value <- as.numeric(results$p.value)
 
 # Write as csv 
 
-# write_csv(results_2010_2020, here::here("output_data", "spear_2010_2020.txt"))
+write_csv(results, here::here("output_data", "spear_modernzones.txt"))
 
 ```
 
 ## Graph 
 
-Graph all townships 2010-2020 
+Graph individual zones 
 
 ```{r}
 
 # Join results of spearman ranks with full dataset 
 
-full_data <- depth_offset %>% 
-  inner_join(results_2010_2020, by = "fishnet")
+full_data <- no_artesian %>% 
+  inner_join(results, by = "id")
 
 
-# Use group_split() to indicate separation by fishnet
+# Use group_split() to indicate separation by id
 
-plot_2010_2020 <- full_data %>%
-  group_split(fishnet)
+plot_vhgzones<- full_data %>%
+  group_split(id)
 
-# Make a function to call each ID as the title of the graph
+# Make a function to call each ID and spearman estimate as the title of the graph
 
 plots <- function(data){
 
   plot_name <- data$estimate[1]
+  plot_name_well <- data$id[1]
 
-ggplot(data, aes(x = well_depth, y = water_leve)) +
+ggplot(data, aes(x = well_dep_1, y = median)) +
   geom_point() +
   labs(x = "Depth (ft)",
-       y = "Static Water Level (ft)",
-       title = plot_name)
+       y = "Water Level (ft)",
+       title = plot_name_well, 
+       subtitle = plot_name) +
+  scale_y_reverse()
 }
 
 
-all_plots <- purrr::map(plot_2010_2020, plots)
+all_plots <- purrr::map(plot_vhgzones, plots)
 
 all_plots[[1]]
 
 # Save as PDF
 
-pdf(here::here("output_data", paste0("2010_2020_spear_", Sys.Date(), ".pdf")), height = 11, width = 8.5)
+pdf(here::here("output_data", paste0("vhg_spear_", Sys.Date(), ".pdf")), height = 11, width = 8.5)
 ggarrange(plotlist = all_plots, ncol = 1, nrow = 3, align = "v")
 dev.off()
 ```
