@@ -42,6 +42,7 @@ options(scipen=999)
 
 entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usgs_usa.txt"))
 ```
+
 # Tidy Data 
 
 - Remove wells without well depth 
@@ -64,7 +65,7 @@ usgs_modern_med <- usgs_modern %>%
   group_by(site_no) %>% 
   mutate(median = median(lev_va)) %>% 
   distinct(site_no, .keep_all = TRUE) %>% 
-  mutate(artesian = ifelse(lev_va <= 0, 1, 0))
+  mutate(artesian = ifelse(median <= 0, 1, 0))
 
 usgs_modern_med$site_no <- sub("^", "w", usgs_modern_med$site_no)
 
