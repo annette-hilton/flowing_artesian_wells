@@ -1,0 +1,104 @@
+---
+title: "Flipped VHG"
+author: "Annette Hilton"
+date: "11/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Attach Packages
+
+```{r}
+# Attach packages 
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(purrr)
+library(broom)
+library(tibble)
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+library(data.table)
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+# Methods & Data Sources
+
+## Read in data 
+
+```{r}
+# Read in dataframe `full_data` (`sd_full_data_flipped.txt`) (from `sd_changeovertime.Rmd`)
+
+sd_full_flipped <- readr::read_tsv(here::here("output_data", "sd_full_data_flipped.txt"))
+```
+
+## Data Analysis 
+
+1. Determine if VHG flipped 
+
+```{r}
+# mutate new columns for spearman correlation being "up" or "down" 
+# mutate new column for flipped/change 
+
+flipped <- sd_full_flipped %>% 
+  rowwise() %>% 
+  mutate(flipped = ifelse(artesian == 1 & artesian_id == "artesian", "still_artesian", 
+                          ifelse(artesian == 0 & artesian_id == "artesian", "became_artesian", 
+                          ifelse(artesian == 1 & estimate > 0, "down", 
+                          ifelse(artesian == 0 & estimate > 0, "still_down", 
+                          ifelse(artesian == 1 & estimate < 0, "still_up", 
+                          ifelse(artesian == 0 & estimate < 0, "up", NA)))))))
+  
+  
+  
+  
+  
+  flipped_case <- sd_full_flipped %>% 
+    mutate(flipped = case_when(artesian == 1 & artesian_id == "artesian" ~"still_artesian",
+                             artesian == 0 & artesian_id == "artesian" ~"became_artesian",
+                             artesian == 1 & estimate > 0 ~"down",
+                             artesian == 0 & estimate > 0 ~"still_down",
+                             artesian == 1 & estimate < 0 ~"still_up", 
+                             artesian == 0 & estimate < 0 ~"up")) %>% 
+    distinct(id, .keep_all = TRUE)
+
+
+```
+
+Extra
+
+```{r}
+# down_shift <- flipped_distinct %>% 
+#   filter(flipped == "down_shift")
+# 
+# still_up <- flipped_distinct %>% 
+#   filter(flipped == "still_up")
+# 
+# up_shift <- flipped_distinct %>% 
+#   filter(flipped == "upshift")
+# 
+# still_down <- flipped_distinct %>% 
+#   filter(flipped == "still_down")
+# 
+# originally_up <- flipped_distinct %>% 
+#   filter(vhg_1900s == "up" & !is.na(flipped))
+# 
+# originally_down <- flipped_distinct %>% 
+#   filter(vhg_1900s == "down")
+```
+
+
+ Write to csv file 
+ 
+```{r}
+write_csv(flipped_case, here::here("output_data", "flipped_sd.txt"))
+```

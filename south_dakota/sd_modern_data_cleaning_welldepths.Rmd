@@ -1,0 +1,156 @@
+---
+title: "South Dakota: Well Depths"
+author: "Annette Hilton"
+date: "11//2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# South Dakota Modern Analysis 
+
+## Attach Packages
+
+```{r}
+# Attach packages 
+
+library(parzer)
+library(Rcpp)
+library(tidyverse)
+library(here)
+library(janitor)
+library(purrr)
+library(broom)
+library(tibble)
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+library(data.table)
+library(lubridate)
+
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+# Methods 
+
+1. Read in modern data of South Dakota 
+  a. Drilling wells from South Dakota Department of Agriculture and Natural Resources (https://apps.sd.gov/nr68welllogs/). From 1/01/1800-11/22/2021 
+  b. Observation wells from South Dakota Department of Agriculture and Natural Resources (https://apps.sd.gov/nr69obswell/default.aspx#viewHelp). All records up to 11/18/2021
+  c. USGS data for South Dakota 
+2. Tidy data 
+3. Prepare for Arc 
+
+## Read in Data
+
+### Drilling wells 
+
+Pos = below land surface 
+Neg = artesian 
+
+```{r}
+sd_raw_drill <-
+    list.files(path = here::here("data", "south_dakota", "sd_drill_wells"),
+               pattern = "*.csv", 
+               full.names = T) %>% 
+    map_df(~read_csv(., col_types = cols(.default = "c"))) 
+
+```
+
+## Tidy Data 
+
+```{r}
+# Tidy data 
+
+sd_tidy_drill <- sd_raw_drill %>% 
+  clean_names() %>% 
+  select(-guid, -comp_rpt_pdf) %>% 
+  mutate(date = lubridate::mdy(well_comp_date), 
+         year = lubridate::year(date)) %>% 
+  filter(!is.na(depth)) %>% 
+  mutate(id = seq(1: 73967))
+
+sd_tidy_drill$id <- sub("^", "w", sd_tidy_drill$id) 
+
+```
+
+Write for ArcGIS 
+
+```{r}
+write_tsv(sd_tidy_drill, here::here("output_data", "sd_drill_arc.txt"))
+```
+
+Process in ArcGIS: 
+
+1. Import into ArcGIS, make into shapefile 
+2. Intersect with original 1900s well 10 km buffer 
+3. Export table 
+4. Read table into R (below) 
+
+## Read into R table from ArcGIS 
+
+```{r}
+sd_drill_intersect <- readr::read_csv(here::here("data", "south_dakota", "sd_drillonly_depths_intersect.txt"))
+```
+
+### Sort by date 
+
+```{r}
+unique_date_sd <- sd_drill_intersect %>% 
+  arrange(year) %>% 
+  filter(!is.na(year), 
+         !year == 0) %>% 
+  mutate(year_1900s = 1900)
+```
+
+Large plot of everything 
+
+```{r}
+depth_all <- ggplot(unique_date_sd, 
+                    aes(x = year, 
+                        y = depth)) + 
+  geom_point()
+
+depth_all
+```
+
+Graph individual zones 
+
+```{r}
+# Use group_split() to indicate separation by id
+
+plot_wellzones <- unique_date_sd %>%
+  group_split(id)
+
+# Make a function to call each ID and spearman estimate as the title of the graph
+
+plots <- function(data){
+
+  plot_name_well <- data$id[1]
+  orig_well_depth <- data$well_depth[1]
+
+ggplot(data, aes(x = year, y = depth)) +
+  geom_point() +
+  geom_point(aes(x = year_1900s, y = well_depth, color = "red")) +
+  labs(x = "Year",
+       y = "Depth (ft)",
+       title = plot_name_well, 
+       subtitle = orig_well_depth) +
+  scale_y_reverse()
+}
+
+
+all_plots <- purrr::map(plot_wellzones, plots)
+
+all_plots[[1]]
+
+# Save as PDF
+
+pdf(here::here("output_data", paste0("sd_welldepths", Sys.Date(), ".pdf")), height = 11, width = 8.5)
+ggarrange(plotlist = all_plots, ncol = 1, nrow = 3, align = "v")
+dev.off()
+```

@@ -41,16 +41,10 @@ options(scipen=999)
 1. Read in modern data of South Dakota 
   a. Drilling wells from South Dakota Department of Agriculture and Natural Resources (https://apps.sd.gov/nr68welllogs/). From 1/01/1800-11/22/2021 
   b. Observation wells from South Dakota Department of Agriculture and Natural Resources (https://apps.sd.gov/nr69obswell/default.aspx#viewHelp). All records up to 11/18/2021
-  c. USGS data for South Dakota 
 2. Tidy data 
 3. Prepare for Arc 
 
-## Read in Data
-
-### Drilling wells 
-
-Pos = below land surface 
-Neg = artesian 
+# Read in Data
 
 ```{r}
 sd_raw_drill <-
@@ -61,7 +55,37 @@ sd_raw_drill <-
 
 ```
 
-## Tidy Data 
+Drilling well depths over time 
+
+```{r}
+
+sd_drill_depths <- sd_raw_drill %>% 
+  clean_names() %>% 
+  select(-guid, -comp_rpt_pdf) %>% 
+  mutate(date = lubridate::mdy(well_comp_date), 
+         year = lubridate::year(date)) %>% 
+  filter(!is.na(depth)) %>% 
+  filter(!depth %in% c("9999", "9999.0", "999", "999.0", "0", "0.00", "0.0"))
+
+sd_drill_depths$depth <- as.numeric(sd_drill_depths$depth)
+
+# Make a plot of well depth over time 
+
+well_depth_sd <- ggplot(sd_drill_depths, 
+                        aes(x = year, 
+                            y = depth)) +
+  geom_line()
+
+well_depth_sd
+
+```
+
+Histogram of depths 
+
+```{r}
+hist(sd_drill_depths$depth)
+```
+
 
 ```{r}
 # Tidy data 
@@ -71,11 +95,10 @@ sd_tidy_drill <- sd_raw_drill %>%
   select(-guid, -comp_rpt_pdf) %>% 
   mutate(date = lubridate::mdy(well_comp_date), 
          year = lubridate::year(date)) %>% 
-  filter(year >= 2010) %>% 
   filter(!is.na(static_value), 
          !is.na(depth)) %>% 
-  mutate(id = seq(1:2598), 
-         artesian = ifelse(static_value <= 0, 1, 0)) 
+  mutate(id = seq(1:2643), 
+         artesian = ifelse(static_value <= 0, 1, 0)) # Apparently no artesian values? 
 
 sd_tidy_drill$id <- sub("^", "w", sd_tidy_drill$id) 
 
@@ -93,8 +116,7 @@ sd_drill_join$median_level <- as.numeric(sd_drill_join$median_level)
 
 ## Read in Data 
 
-### Observation Wells From: https://apps.sd.gov/nr69obswell/default.aspx#viewHelp
-
+Observation Wells From: https://apps.sd.gov/nr69obswell/default.aspx#viewHelp
 Pos = artesian 
 Neg = below land surface 
 
@@ -116,13 +138,9 @@ sd_depth_raw <- list.files(path = here::here("data", "south_dakota", "sd_obs_wel
 
 ## Tidy Data 
 
-Join dataframes 
-
-**CHANGE NEGATIVE VALUES TO POSITIVE TO BE CONSISTENT WITH DRILLING WELLS & USGS 
-(Now, POS = below land surface, NEG = artesian)
 
 ```{r}
-# Full join 
+# Full join on observation wells 
 
 sd_join <- sd_wells_raw %>% 
   full_join(sd_depth_raw, by = "Observation Well")
@@ -134,24 +152,23 @@ sd_full_tidy <- sd_join %>%
   select(-is_manual, -x8, -x14) %>% 
   mutate(date = lubridate::mdy(reading_date), 
          year = year(date)) %>% 
-  filter(year >= 2010) %>% 
   filter(!is.na(reading)) %>% 
-  filter(!is.na(total_depth)) 
+  filter(!is.na(total_depth))
 
 sd_full_tidy$reading <- as.numeric(sd_full_tidy$reading)
 
 sd_full_med <- sd_full_tidy %>% 
-  mutate(corrected_water_lev = (reading*-1)) %>% 
   group_by(observation_well) %>% 
-  mutate(median_level = median(corrected_water_lev)) %>% 
+  mutate(median_level = median(reading)) %>% 
   distinct(observation_well, .keep_all = TRUE) %>% 
-  mutate(artesian = ifelse(median_level <= 0, 1, 0))
+  mutate(artesian = ifelse(median_level >= 0, 1, 0))
 
 
 # Make consistent with other data frame 
 
 sd_obs_join <- sd_full_med %>% 
   rename(original_date = reading_date, 
+         water_level = reading, 
          lat = latitude, 
          long = longitude, 
          id = observation_well, 
@@ -160,56 +177,16 @@ sd_obs_join <- sd_full_med %>%
 
 ```
 
-## Read in Data 
-
-### USGS 
-
-Pos = below land surface 
-Neg = artesian 
-
-```{r}
-sd_usgs <- read_tsv(here::here("output_data", "usgs_modern_sd.txt"))
-
-```
-
-```{r}
-# Tidy data 
-
-sd_tidy_usgs <- sd_usgs %>%   
-  filter(level_year >= 2010) 
-
-# Make consistent with other data frame 
-
-sd_usgs_join <- sd_tidy_usgs %>% 
-  rename(original_date = lev_dt, 
-         date = level_date,
-         year = level_year, 
-         median_level = median, 
-         lat = dec_lat_va, 
-         long = dec_long_va, 
-         id = site_no, 
-         depth = well_depth_va) %>% 
-  mutate(elevation = NA, 
-         aquifer = NA) %>% 
-  select(id, lat, long, aquifer, elevation, original_date, date, year, depth, median_level, artesian) 
-
-sd_usgs_join$median_level <- as.numeric(sd_usgs_join$median_level)
-sd_usgs_join$lat <- as.character(sd_usgs_join$lat)
-sd_usgs_join$long <- as.character(sd_usgs_join$long)
-sd_usgs_join$depth <- as.character(sd_usgs_join$depth)
-
-```
-
 Join both dataframes 
 
 ```{r}
-sd_full <- rbind(sd_obs_join, sd_drill_join, sd_usgs_join)
+sd_full <- rbind(sd_obs_join, sd_drill_join)
 ```
 
 Write for ArcGIS 
 
 ```{r}
-write_tsv(sd_full, here::here("output_data", "sd_full_modern.txt"))
+write_tsv(sd_full, here::here("output_data", "sd_full_modern_dates.txt"))
 ```
 
 

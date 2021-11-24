@@ -35,7 +35,7 @@ options(scipen=999)
 
 Methods: 
 
-1. Compilation of early well data (see "early_1900s_cleaning.Rmd"--deep wells) and modern data for South Dakota (drilling wells, and observation monitoring wells) (see "sd_modern_data_cleaning.Rmd")
+1. Compilation of early well data (see "early_1900s_cleaning.Rmd"--deep wells) and modern data for South Dakota (drilling wells, observation monitoring wells, and USGS wells) (see "sd_modern_data_cleaning.Rmd")
 
 2. Exported into ArcGIS
 
@@ -55,7 +55,7 @@ Methods:
 ```{r}
 # Read in dataset of intersect between early 1900s wells and modern wells within 10 km distance 
 
-intersect_sd <- readr::read_csv(here::here("data", "south_dakota", "sd_intersect_modern_deep1900s.txt"))
+intersect_sd <- readr::read_csv(here::here("data", "south_dakota", "sd_intersect_final.txt"))
 
 ```
 
@@ -69,7 +69,6 @@ intersect_tidy <- intersect_sd %>%
   clean_names() %>% 
   select(id, latitude, longitude, well_depth, water_leve, artesian, id_1, depth, median_lev, artesian_1, lat, long)
   
-
 ```
 
 Add criteria: 
@@ -82,14 +81,14 @@ Add criteria:
  
 
 ```{r}
-# 1. Criteria of 3 wells per early 1900s well  
+# 1. Criteria of 3 wells per early 1900s well 
 # 2. 1900s must have a modern well deeper and shallower than it 
 
  wells_criteria <- intersect_tidy %>% 
   group_by(id) %>% 
   filter(n() >= 3) %>% 
   mutate(min_depth = min(depth), 
-         max_depth = max(depth)) %>% 
+         max_depth = max(depth) +20) %>% 
   filter(well_depth < max_depth & well_depth > min_depth) %>% 
   ungroup()
 
@@ -110,7 +109,7 @@ wells_total_n <- wells_criteria %>%
   mutate(percent = (art_n/n)) %>% 
   mutate(artesian_id = ifelse(percent > 0.5, "artesian", NA))
 
-write_tsv(wells_total_n, here::here("output_data", "wells_total_n.txt"))
+# write_tsv(wells_total_n, here::here("output_data", "wells_total_n.txt"))
 
 # Add criteria of 50% or greater artesian are removed 
 
@@ -171,7 +170,7 @@ results <- as.data.frame(do.call(rbind, spearman)) %>%
 
 # Write as csv 
 
-write_csv(results, here::here("output_data", "spear_modernzones.txt"))
+write_csv(results, here::here("output_data", "spear_sd_modernzones.txt"))
 
 ```
 
@@ -185,6 +184,10 @@ Graph individual zones
 
 full_data <- no_artesian %>% 
   inner_join(results, by = "id")
+
+# Write full data frame 
+
+write_tsv(full_data, here::here("output_data", "sd_full_data_flipped.txt"))
 
 
 # Use group_split() to indicate separation by id

@@ -1,0 +1,471 @@
+---
+title: "Results South Dakota--Change over time between early 1900s wells and modern conditions (2010-2020)"
+author: "Annette Hilton"
+date: "11/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Attach Packages
+
+```{r}
+# Attach packages 
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(purrr)
+library(broom)
+library(tibble)
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+# South Dakota 
+
+## Change over time between early 1900s data and modern (2010-2020) data 
+
+Methods: 
+
+1. Compilation of early well data (see "early_1900s_cleaning.Rmd"--deep wells) and modern data for South Dakota (drilling wells, and observation monitoring wells) (see "sd_modern_data_cleaning.Rmd")
+
+Note: Observation wells (negative = below land surface, positive = artesian) 
+Drilling wells = all positive (below land surface) 
+
+2. Exported into ArcGIS
+
+3. Buffer of 10 km around deep early 1900s wells, intersect with modern wells 
+
+4. Import into R for data wrangling 
+
+5. Data cleaning & tidying, prepare for statistical tests 
+
+6. Spearman rank correlations 
+
+
+## Import Data 
+
+### Methods step 4. 
+
+```{r}
+# Read in dataset of intersect between early 1900s wells and modern wells within 10 km distance 
+
+intersect_sd <- readr::read_csv(here::here("data", "south_dakota", "sd_intersect_alldates.txt"))
+
+```
+
+## Data cleaning, tidy, prepare for stats 
+
+### Methods step 5. 
+
+```{r}
+
+intersect_tidy <- intersect_sd %>% 
+  clean_names() %>% 
+  select(id, latitude, longitude, well_depth, water_leve, artesian, id_1, depth, median_lev, artesian_1, lat, long, year)
+  
+```
+
+Add criteria: 
+
+1. Each original 1900s well must have at least 3 modern wells associated 
+
+2. Make sure each original well has at least one well that is more shallow and one well that is deeper than it 
+
+3. Remove artesian wells if the artesian conditions are more than 50% of all wells in the area zone 
+ 
+
+```{r}
+# 1. Criteria of 3 wells per early 1900s well 
+# 2. 1900s must have a modern well deeper and shallower than it 
+
+ wells_criteria <- intersect_tidy %>% 
+  group_by(id) %>% 
+  filter(n() >= 3) %>% 
+  mutate(min_depth = min(depth), 
+         max_depth = max(depth) + 20) %>% 
+  filter(well_depth < max_depth & well_depth > min_depth) %>% 
+  ungroup()
+
+wells_criteria_dates <- wells_criteria %>% 
+  filter(year >= 2010)
+
+```
+
+## Graph Well Depths Over Time 
+
+Graph individual zones 
+
+```{r}
+
+
+# Use group_split() to indicate separation by id
+
+plot_vhgzones<- wells_criteria_depth %>%
+  group_split(id)
+
+# Make a function to call each ID and spearman estimate as the title of the graph
+
+plots <- function(data){
+
+  plot_name_well <- data$id[1]
+
+ggplot(data, aes(x = year, y = depth)) +
+  geom_point() +
+  labs(x = "Depth (ft)",
+       y = "Water Level (ft)",
+       title = plot_name_well, 
+       subtitle = plot_name) +
+  scale_y_reverse()
+}
+
+
+all_plots <- purrr::map(plot_vhgzones, plots)
+
+all_plots[[1]]
+
+# Save as PDF
+
+pdf(here::here("output_data", paste0("vhg_spear_sd", Sys.Date(), ".pdf")), height = 11, width = 8.5)
+ggarrange(plotlist = all_plots, ncol = 1, nrow = 3, align = "v")
+dev.off()
+```
+
+
+```{r}
+# 3. Artesian wells 
+
+# Group by ID 
+# Add counts for total number of wells in township
+# Add counts for total number of artesian wells in each township 
+# Add percentage of artesian wells per township 
+
+wells_total_n <- wells_criteria %>% 
+  group_by(id) %>% 
+  add_count(id) %>% 
+  add_tally(artesian_1 == 1, name = "art_n") %>% 
+  mutate(percent = (art_n/n)) %>% 
+  mutate(artesian_id = ifelse(percent > 0.5, "artesian", NA))
+
+write_tsv(wells_total_n, here::here("output_data", "wells_total_n.txt"))
+
+# Add criteria of 50% or greater artesian are removed 
+
+no_artesian <- wells_total_n %>% 
+  group_by(id) %>% 
+  filter(!percent > 0.5)
+
+# Keep all artesian well townships 
+
+all_artesian <- wells_total_n %>% 
+  group_by(id) %>% 
+  filter(percent > 0.5)
+
+# # Write artesian file for Arc 
+# 
+# artesian_arc <- all_artesian %>% 
+#   mutate(arc_artesian = "artesian") %>% 
+#   distinct(id, .keep_all = TRUE)
+# 
+# write_csv(artesian_arc, here::here("output_data", "artesian_arc.txt"))
+
+```
+
+## Statistical tests 
+
+### Methods step 6. 
+
+Spearman rank correlation method calculates the correlation between the ranks of x and the ranks of y variables. 
+
+Variable: Depth of well (well_depth)
+Variable: Water level (water_leve)
+
+
+IMPORTANT NOTE: Something is going on with cor.test(), does not work. cor() does work. Error: "not enough finite values" Have thoroughly investigated and do not understand. 
+
+```{r}
+# Use lapply() and split() to split the dataframe by "id" (original early 1900s well) and then iterate the cor.test function for each group (one original 1900s well and modern wells associated)
+
+# spearman <- lapply(split(no_artesian, f = no_artesian$id), function(no_artesian) cor.test(no_artesian$med_level, no_artesian$well_dep_1, method = "spearman", exact = FALSE))
+
+spearman <- lapply(split(no_artesian, f = no_artesian$id), function(no_artesian) cor(no_artesian$median_lev, no_artesian$depth, method = "spearman"))
+
+spearman_2010 <- lapply(split(wells_criteria_dates, f = wells_criteria_dates$id), function(wells_criteria_dates) cor(wells_criteria_dates$median_lev, wells_criteria_dates$depth, method = "spearman"))
+
+# Bind results together in a dataframe and indicate the id (rownames_to_column())
+
+results <- as.data.frame(do.call(rbind, spearman)) %>% 
+  rownames_to_column(var = "id") %>% 
+  rename(estimate = V1)
+
+results_2010 <- as.data.frame(do.call(rbind, spearman_2010)) %>% 
+  rownames_to_column(var = "id") %>% 
+  rename(estimate = V1)
+
+# 
+# results <- as.data.frame(do.call(rbind, spearman)) %>% 
+#   rownames_to_column(var = "id") %>% 
+#   select(id, p.value, estimate)
+
+# Remove character string in estimate column (rho)
+# Make sure p-value is numeric 
+
+# results$estimate <- gsub("[a-z = ()]", "", results$estimate)
+# results$p.value <- as.numeric(results$p.value)
+
+# Write as csv 
+
+write_csv(results, here::here("output_data", "spear_modernzones.txt"))
+
+```
+
+## Graph 
+
+Graph individual zones 
+
+```{r}
+
+# Join results of spearman ranks with full dataset 
+
+full_data <- no_artesian %>% 
+  inner_join(results, by = "id")
+
+write_tsv(full_data, here::here("output_data", "sd_spear_full.txt"))
+
+full_data_2010 <- wells_criteria_dates %>% 
+  inner_join(results_2010, by = "id")
+
+write_tsv(full_data, here::here("output_data", "sd_spear_full_2010.txt"))
+
+# Use group_split() to indicate separation by id
+
+plot_vhgzones<- full_data_2010 %>%
+  group_split(id)
+
+# Make a function to call each ID and spearman estimate as the title of the graph
+
+plots <- function(data){
+
+  plot_name <- data$estimate[1]
+  plot_name_well <- data$id[1]
+
+ggplot(data, aes(x = depth, y = median_lev)) +
+  geom_point() +
+  labs(x = "Depth (ft)",
+       y = "Water Level (ft)",
+       title = plot_name_well, 
+       subtitle = plot_name) +
+  scale_y_reverse()
+}
+
+
+all_plots <- purrr::map(plot_vhgzones, plots)
+
+all_plots[[1]]
+
+# Save as PDF
+
+pdf(here::here("output_data", paste0("vhg_spear_sd", Sys.Date(), ".pdf")), height = 11, width = 8.5)
+ggarrange(plotlist = all_plots, ncol = 1, nrow = 3, align = "v")
+dev.off()
+```
+
+
+----------------------------------------
+
+USGS DATA 
+
+
+## Import Data 
+
+### Methods step 4. 
+
+```{r}
+# Read in dataset of intersect between early 1900s wells and modern wells within 10 km distance 
+
+intersect_sd_usgs <- readr::read_csv(here::here("data", "south_dakota", "sd_allwells_intersect.txt"))
+
+
+```
+
+## Data cleaning, tidy, prepare for stats 
+
+### Methods step 5. 
+
+```{r}
+
+intersect_usgs <- intersect_sd_usgs %>% 
+  clean_names() %>% 
+  select(id, latitude, longitude, well_depth, water_leve, artesian, site_no, level_year, well_dep_1, lev_va, dec_lat_va, dec_long_v)
+  
+
+```
+
+Add criteria: 
+
+1. Each original 1900s well must have at least 3 modern wells associated 
+
+2. Make sure each original well has at least one well that is more shallow and one well that is deeper than it 
+
+3. Remove artesian wells if the artesian conditions are more than 50% of all wells in the area zone 
+ 
+```{r}
+# USGS 
+
+ wells_criteria_usgs <- intersect_usgs %>% 
+   filter(level_year <= 1960 & level_year >= 1950) %>% 
+   group_by(site_no) %>% 
+   mutate(med_level = median(lev_va)) %>% 
+   distinct(site_no, .keep_all = TRUE) %>% 
+   ungroup() %>% 
+   group_by(id) %>% 
+   filter(n() >= 3) %>% 
+  mutate(min_depth = min(well_dep_1), 
+         max_depth = max(well_dep_1)) %>% 
+  filter(well_depth < max_depth & well_depth > min_depth) %>% 
+  ungroup()
+
+```
+
+USGS 
+
+```{r}
+# 3. Artesian wells 
+
+# Group by ID 
+# Add counts for total number of wells in township
+# Add counts for total number of artesian wells in each township 
+# Add percentage of artesian wells per township 
+
+wells_total_n_usgs <- wells_criteria_usgs %>% 
+  mutate(artesian_usgs = ifelse(med_level <= 0, 1, 0)) %>% 
+  group_by(id) %>% 
+  add_count(id) %>% 
+  add_tally(artesian_usgs == 1, name = "art_n") %>% 
+  mutate(percent = (art_n/n)) %>% 
+  mutate(artesian_id = ifelse(percent > 0.5, "artesian", NA))
+
+write_tsv(wells_total_n, here::here("output_data", "wells_total_n.txt"))
+
+# Add criteria of 50% or greater artesian are removed 
+
+no_artesian <- wells_total_n_usgs %>% 
+  group_by(id) %>% 
+  filter(!percent > 0.5)
+
+no_artesian$med_level <- as.numeric(no_artesian$med_level)
+no_artesian$well_dep_1 <- as.numeric(no_artesian$well_dep_1)
+
+# Keep all artesian well townships 
+
+all_artesian <- wells_total_n %>% 
+  group_by(id) %>% 
+  filter(percent > 0.5)
+
+# # Write artesian file for Arc 
+# 
+# artesian_arc <- all_artesian %>% 
+#   mutate(arc_artesian = "artesian") %>% 
+#   distinct(id, .keep_all = TRUE)
+# 
+# write_csv(artesian_arc, here::here("output_data", "artesian_arc.txt"))
+
+```
+
+## Statistical tests 
+
+### Methods step 6. 
+
+Spearman rank correlation method calculates the correlation between the ranks of x and the ranks of y variables. 
+
+Variable: Depth of well (well_depth)
+Variable: Water level (water_leve)
+
+
+IMPORTANT NOTE: Something is going on with cor.test(), does not work. cor() does work. Error: "not enough finite values" Have thoroughly investigated and do not understand. 
+
+USGS 
+
+```{r}
+# Use lapply() and split() to split the dataframe by "id" (original early 1900s well) and then iterate the cor.test function for each group (one original 1900s well and modern wells associated)
+
+spearman_usgs <- lapply(split(no_artesian, f = no_artesian$id), function(no_artesian) cor(no_artesian$well_dep_1, no_artesian$med_level, method = "spearman"))
+
+# Bind results together in a dataframe and indicate the id (rownames_to_column())
+
+results <- as.data.frame(do.call(rbind, spearman_usgs)) %>% 
+  rownames_to_column(var = "id") %>% 
+  rename(estimate = V1)
+# 
+# results <- as.data.frame(do.call(rbind, spearman)) %>% 
+#   rownames_to_column(var = "id") %>% 
+#   select(id, p.value, estimate)
+
+# Remove character string in estimate column (rho)
+# Make sure p-value is numeric 
+
+# results$estimate <- gsub("[a-z = ()]", "", results$estimate)
+# results$p.value <- as.numeric(results$p.value)
+
+# Write as csv 
+
+write_csv(results, here::here("output_data", "spear_southdakota.txt"))
+
+```
+
+
+## Graph 
+
+Graph individual zones 
+
+```{r}
+
+# Join results of spearman ranks with full dataset 
+
+full_data <- no_artesian %>% 
+  inner_join(results, by = "id")
+
+write_tsv(full_data, here::here("output_data", "sd_spear_full.txt"))
+
+# Use group_split() to indicate separation by id
+
+plot_vhgzones<- full_data %>%
+  group_split(id)
+
+# Make a function to call each ID and spearman estimate as the title of the graph
+
+plots <- function(data){
+
+  plot_name <- data$estimate[1]
+  plot_name_well <- data$id[1]
+
+ggplot(data, aes(x = well_dep_1, y = med_level)) +
+  geom_point() +
+  labs(x = "Depth (ft)",
+       y = "Water Level (ft)",
+       title = plot_name_well, 
+       subtitle = plot_name) +
+  scale_y_reverse()
+}
+
+
+all_plots <- purrr::map(plot_vhgzones, plots)
+
+all_plots[[1]]
+
+# Save as PDF
+
+pdf(here::here("output_data", paste0("vhg_spear_sd", Sys.Date(), ".pdf")), height = 11, width = 8.5)
+ggarrange(plotlist = all_plots, ncol = 1, nrow = 3, align = "v")
+dev.off()
+```
+
+
