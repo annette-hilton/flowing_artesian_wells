@@ -127,6 +127,8 @@ Join dataframes
 sd_join <- sd_wells_raw %>% 
   full_join(sd_depth_raw, by = "Observation Well")
 
+write_tsv(sd_join, here::here("output_data", "sd_obs_wells.txt"))
+
 # Tidy data 
 
 sd_full_tidy <- sd_join %>% 
