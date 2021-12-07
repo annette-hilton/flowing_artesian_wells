@@ -1,0 +1,466 @@
+---
+title: "Mississippi Embayment Project--Well Classification"
+author: "Annette Hilton"
+date: "12/07/2021"
+output: html_docu/ment
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error = FALSE)
+```
+
+# Introduction
+
+This project...
+
+The purpose of this Rmd is to: 
+
+*Pre-Rmd*: Data were processed in ArcGIS for DEM value 
+
+1) Prep data for input to ArcGIS (for hydrogeological analysis) 
+2) After ArcGIS processing: 
+  - Determine well-aquifer classification 
+
+# Files Read-In & Written in this Rmd 
+
+Read-in: 
+
+1. "entire_usa_2021.txt" from folder "source_data" 
+  - Purpose: from RProject: "usa_groundwater_data", entire USGS well water measurements for all  sites in the USA as of December 2021 
+
+Written: 
+
+1. "unique_me_wells.txt" in folder "me_data":"arc_input" 
+  - Purpose: Filtered to ME states only, unique sites (for use in ArcGIS) 
+  
+2. "me_analysis.txt" in folder "me_data" 
+  - Purpose: Unique ME sites (processed in ArcGIS for only ME sites that intersect the aquifer units) with true topography and well bottom 
+
+## Attach Packages and Data 
+
+```{r}
+# Attach packages 
+
+library(plyr) # Be sure to load `plyr()` first, otherwise other functions in tidyverse break! 
+library(tidyverse)
+library(here)
+library(janitor)
+library(naniar)
+
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+```{r}
+# Modern data 
+# Read in modern USGS data w/ DEM 
+dem_usgs_modern <- readr::read_csv(here::here("data", "dem", "dem_usgs_modern.csv")) 
+
+# Read in modern USGS data full file (from Rmd `modern_data_cleaning.Rmd`)
+usgs_modern <- readr::read_tsv(here::here("output_data", "usgs_modern.txt"))
+
+
+# 1900s data 
+# Read in early 1900s data w/ DEM 
+dem_1900s <- readr::read_csv(here::here("data", "dem", "dem_1900s.csv"))
+
+# Read in early 1900s data full file (from Rmd `early_1900s_cleaning.Rmd`)
+early_1900s <- readr::read_tsv(here::here("output_data", "early1900s_arc.txt"))
+```
+
+### Join DEM files with full data files 
+
+```{r}
+# Join modern 
+
+modern_join <- usgs_modern %>% 
+  full_join(dem_usgs_modern, by = "site_no")
+
+# Join 1900s 
+
+early1900s_join <- early_1900s %>% 
+  full_join(dem_1900s, by = "id")
+```
+
+## Data Analysis (Pre-Arc)
+
+### Refine dataset for the Mississippi Embayment 
+
+```{r}
+# Only keep well data for states in ME: 
+# Missouri, Illinois, Kentucky, Tennessee, Arkansas, Mississippi, Alabama, Louisiana
+
+me <- modern_join %>% 
+  filter(id.x %in% c("al", "ar", "il", "ky", "la", "ms", "mo", "tn"))
+
+```
+
+
+### Prep data for import into ArcGIS 
+
+```{r}
+# Write to text file to then export to ArcGIS
+
+write_tsv(me, here::here("output_data", "me", "me_modern_toclassify.txt"))
+
+# Write early 1900s file w/ DEM to export into ArcGIS 
+
+write_tsv(early1900s_join, here::here("output_data", "me", "early1900s_toclassify.txt"))
+  
+```
+
+
+## ArcGIS Data Analysis 
+
+The following steps were performed in ArcGIS: 
+
+Hydrogeological data: 
+Arcfile = "miss_embayment" 
+
+1. Import USGS ME geologic data (rasters) 
+2. Import USGS wells (text file from analysis above; 'unique_me_wells.txt') 
+3. Use tool "Extract multi values to points" to determine well location intersection with geological raster layers 
+4. Export data as text file  
+
+
+## Data Analysis (Post-Arc)
+
+### Hydrogeological data 
+
+```{r}
+# Read in modern data file from Arc 
+
+me_mod_fromarc <- readr::read_csv(here::here("data", "me", "me_modern_classifyreturn.txt"))
+
+# Read in early 1900s data file from Arc 
+
+early1900s_fromarc <- readr::read_csv(here::here("data", "me", "early1900s_classifyreturn.txt"))
+
+```
+
+Tidy data 
+
+```{r}
+# Basic data tidying 
+# Create `na_strings` to indicate pesky NA values
+# Replace NA numeric indicators with "NA" 
+
+# Modern data
+
+na_strings <- c("-9999", "-9999.00", "-9999.000", "-9999.0000", "-9999.00000", "-9999.000000")
+
+me_mod_tidy <- me_mod_fromarc %>% 
+  clean_names() %>% 
+  select(-oid) %>% 
+  replace_with_na_all(condition = ~.x %in% na_strings)
+
+# 1900s data 
+
+early1900s_tidy <- early1900s_fromarc %>% 
+  clean_names() %>% 
+  select(-oid)
+
+```
+
+### ME Aquifer Information 
+
+Hydrologic Model Layer Surfaces:
+
+- Mississippi river valley aquifer **mrva** 
+- Vicksburg-Jackson Group (top) **(vkbg)**   
+- Upper Claiborne aquifer (top) **(ucaq)**
+- Middle Claiborne confining unit (top) **(mccu)**  
+- Middle Claiborne aquifer (top) **(mcaq)** 
+- Lower Claiborne confining unit (top) **(lccu)**  
+- Lower Claiborne aquifer (top) **(lcaq)** 
+- Middle Wilcox aquifer (top) **(mwaq)**
+- Lower Wilcox aquifer (top) **(lwaq)**
+- Midway confining unit (top) **(mdwy)** 
+
+Unit Range (ft): 
+
+- mrva: unknown 
+- vkbg: 566 (-364) 
+- ucaq: 521 (-874)
+- mccu: 540 (-1461)
+- mcaq: 654 (-1659)
+- lccu: 614 (-2539)
+- lcaq: 616 (-3102)
+- mwaq: 632 (-3347)
+- lwaq: 555 (-2320)
+- mdwy: 553 (-6036)
+
+
+### Aquifer analysis 
+
+- Find well bottom 
+- Remove observations that do not fall within ME (all NAs) 
+
+```{r}
+# Convert `rastervalu` column from meters to feet (conversion: 1 meter = 3.28084 feet)
+# Add a column that is elevation minus well depth
+# Add column to remove rows if vkbg:mdwy are all NAs (does not intersect with ME) 
+
+# Modern data 
+
+me_analysis_mod <- me_mod_tidy %>% 
+  mutate(topo_ft = rastervalu * 3.28084) %>% 
+  mutate(well_bottom = topo_ft - well_depth) %>% 
+  mutate(keep = 
+           ifelse(is.na(vkbg_surf) & is.na(ucaq_surf) & is.na(mccu_surf) 
+                  & is.na(mcaq_surf) & is.na(lccu_surf) & is.na(lcaq_surf)
+                  & is.na(mwaq_surf) & is.na(lwaq_surf) & is.na(mdwy_surf), "NA", "keep")) %>% 
+  filter(!keep == "NA")
+
+# Write to tsv file for analysis in other Rmds 
+
+# write_tsv(me_analysis, here::here("me_data", "me_analysis.txt"))
+
+
+# 1900s data 
+
+me_analysis_1900 <- early1900s_tidy %>% 
+  mutate(topo_ft = rastervalu * 3.28084) %>% 
+  mutate(well_bottom = topo_ft - well_depth_ft) %>% 
+  mutate(keep = 
+           ifelse(is.na(vkbg_surf) & is.na(ucaq_surf) & is.na(mccu_surf) 
+                  & is.na(mcaq_surf) & is.na(lccu_surf) & is.na(lcaq_surf)
+                  & is.na(mwaq_surf) & is.na(lwaq_surf) & is.na(mdwy_surf), "NA", "keep")) %>% 
+  filter(!keep == "NA")
+
+# Write to tsv file for analysis in other Rmds 
+
+# write_tsv(me_analysis, here::here("me_data", "me_analysis.txt"))
+  
+```
+
+#### Classify each well to an aquifer unit 
+
+
+Process: 
+
+If well bottom is greater than second unit (top), then it falls within the first unit (second unit top is the bottom of the first unit). 
+
+Theory: 
+
+well bottom > vkbg (first unit) = mrva 
+well bottom > ucaq (second unit) = vkbg (first unit) 
+well bottom > mccu (third unit) = ucaq (second unit) 
+well bottom > mcaq (fourth unit) = mccu (third unit) 
+well bottom > lccu (fifth unit) = mcaq (fourth unit) 
+well bottom > lcaq (sixth unit) = lccu (fifth unit) 
+well bottom > mwaq (seventh unit) = lcaq (sixth unit) 
+well bottom > lwaq (eigth unit) = mwaq (seventh unit) 
+well bottom > mdwy (ninth unit) = lwaq (eigth unit) 
+well bottom < mdwy (ninth unit) = mdwy (ninth unit) 
+
+Code: 
+
+well bottom < topo_ft & well bottom > max(vkbg:mdwy) = mrva
+well bottom < vkbg & well bottom > max(ucaq:mdwy) = vkbg
+well bottom < ucaq & well bottom > max(mccu:mdwy) = ucaq
+well bottom < mccu & well bottom > max(mcaq:mdwy) = mccu 
+well bottom < mcaq & well bottom > max(lccu:mdwy) = mcaq
+well bottom < lccu & well bottom > max(lcaq:mdwy) = lccu 
+well bottom < lcaq & well bottom > max(mwaq:mdwy) = lcaq
+well bottom < mwaq & well bottom > max(lwaq:mdwy) = mwaq
+well bottom < lwaq & well bottom > mdwy = lwaq
+well bottom < mdwy = mdwy 
+
+
+```{r}
+# Code for assigning each well to an aquifer unit 
+# Not elegant but currently works! 
+
+# Modern data 
+
+me_class_mod <- me_analysis_mod %>% 
+  rowwise() %>%
+  mutate(aquifer = 
+        ifelse(well_bottom < topo_ft & well_bottom > max(vkbg_surf, ucaq_surf, mccu_surf, 
+                                                            mcaq_surf, lccu_surf, lcaq_surf,
+                                                            mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "mrva", 
+        ifelse(well_bottom < vkbg_surf & well_bottom > max(ucaq_surf, mccu_surf, 
+                                                            mcaq_surf, lccu_surf,lcaq_surf,
+                                                            mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE),"vkbg",
+        ifelse(well_bottom < ucaq_surf & well_bottom > max(mccu_surf, 
+                                                            mcaq_surf, lccu_surf,lcaq_surf,
+                                                            mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "ucaq", 
+        ifelse(well_bottom < mccu_surf & well_bottom > max(mcaq_surf, lccu_surf,lcaq_surf,
+                                                            mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "mccu",
+        ifelse(well_bottom < mcaq_surf & well_bottom > max(lccu_surf,lcaq_surf,
+                                                            mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "mcaq", 
+        ifelse(well_bottom < lccu_surf & well_bottom > max(lcaq_surf,
+                                                            mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "lccu", 
+        ifelse(well_bottom < lcaq_surf & well_bottom > max(mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "lcaq",
+        ifelse(well_bottom < mwaq_surf & well_bottom > max(lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "mwaq",
+        ifelse(well_bottom < lwaq_surf & well_bottom > mdwy_surf, "lwaq",
+        ifelse(well_bottom < mdwy_surf, "mdwy", NA)))))))))))
+
+
+# 1900s data 
+
+me_class_1900 <- me_analysis_1900 %>% 
+  rowwise() %>%
+  mutate(aquifer = 
+        ifelse(well_bottom < topo_ft & well_bottom > max(vkbg_surf, ucaq_surf, mccu_surf, 
+                                                            mcaq_surf, lccu_surf, lcaq_surf,
+                                                            mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "mrva", 
+        ifelse(well_bottom < vkbg_surf & well_bottom > max(ucaq_surf, mccu_surf, 
+                                                            mcaq_surf, lccu_surf,lcaq_surf,
+                                                            mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE),"vkbg",
+        ifelse(well_bottom < ucaq_surf & well_bottom > max(mccu_surf, 
+                                                            mcaq_surf, lccu_surf,lcaq_surf,
+                                                            mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "ucaq", 
+        ifelse(well_bottom < mccu_surf & well_bottom > max(mcaq_surf, lccu_surf,lcaq_surf,
+                                                            mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "mccu",
+        ifelse(well_bottom < mcaq_surf & well_bottom > max(lccu_surf,lcaq_surf,
+                                                            mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "mcaq", 
+        ifelse(well_bottom < lccu_surf & well_bottom > max(lcaq_surf,
+                                                            mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "lccu", 
+        ifelse(well_bottom < lcaq_surf & well_bottom > max(mwaq_surf, lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "lcaq",
+        ifelse(well_bottom < mwaq_surf & well_bottom > max(lwaq_surf, mdwy_surf, 
+                                                            na.rm = TRUE), "mwaq",
+        ifelse(well_bottom < lwaq_surf & well_bottom > mdwy_surf, "lwaq",
+        ifelse(well_bottom < mdwy_surf, "mdwy", NA)))))))))))
+
+```
+
+11/29/21 Addition/example: 
+
+```{r}
+me_mcaq_lccu <- me_class %>% 
+  filter(aquifer %in% c("mcaq", "lccu"))
+```
+
+Summary of wells per aquifer unit 
+
+```{r}
+# Summary of wells per aquifer unit 
+
+summary_me <- me_class %>% 
+  group_by(aquifer) %>% 
+  count(aquifer) 
+
+write_tsv(summary_me, here::here("me_data", "summary_me.txt"))
+```
+
+#### Confined and Unconfined Well Criteria 
+
+Unconfined aquifer (MRVA): 
+
+- Criteria: Must have at least 10 m (33 ft) of confining material below 
+- Code: If the aquifer is MRVA, then calculate the sum of the confining unit thicknesses (VKBG, MCCU, LCCU). If the sum of the confining unit thicknesses is >= 33 ft (10m), then "keep" the well. 
+
+Confined aquifer units (UCAQ, MCAQ, LCAQ, MWAQ, LWAQ): 
+
+- Criteria: Must have at least 10 m (33 ft) of confining material above
+- Code: Dependent on the aquifer, calculate the sum of the confining unit thickness above. If the sum of the confining unit thickness is >= 33 ft (10m), then "keep" the well. 
+
+
+First, determine thickness of aquifer units 
+
+```{r}
+# Thickness of aquifer units 
+
+me_thickness <- me_class %>% 
+  mutate(
+    vkbg_thick = vkbg_surf - ucaq_surf, 
+    ucaq_thick = ucaq_surf - mccu_surf, 
+    mccu_thick = mccu_surf - mcaq_surf, 
+    mcaq_thick = mcaq_surf - lccu_surf, 
+    lccu_thick = lccu_surf - lcaq_surf, 
+    lcaq_thick = lcaq_surf - mwaq_surf, 
+    mwaq_thick = mwaq_surf - lwaq_surf, 
+    lwaq_thick = lwaq_surf - mdwy_surf
+  )
+
+```
+
+Then, determine cumulative thickness & which wells meet criteria 
+
+```{r}
+# Only consider confining units for thickness 
+# VKBG, MCCU, LCCU
+
+me_cum_thickness <- me_thickness %>% 
+  rowwise() %>% 
+    dplyr::mutate(cum_thick = 
+        ifelse(aquifer == "mrva", sum(vkbg_thick, mccu_thick, na.rm = TRUE), 
+        ifelse(aquifer == "ucaq", sum(vkbg_thick), 
+        ifelse(aquifer == "mcaq", sum(vkbg_thick, mccu_thick, na.rm = TRUE),
+        ifelse(aquifer == "lcaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE), 
+        ifelse(aquifer == "mwaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE), 
+        ifelse(aquifer == "lwaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE), 
+               NA))))))) %>% 
+  dplyr::mutate(keep = 
+           ifelse(cum_thick >= 33, "keep", NA))
+```
+
+
+### Separate each aquifer/unit and confined vs unconfined 
+
+Unconfined aquifer (MRVA) 
+n = 16068
+
+```{r}
+# MRVA 
+mrva <- me_cum_thickness %>% 
+  filter(aquifer == "mrva" & keep == "keep")
+
+# Add character value in front of site_no column as workaround for ArcGIS issue
+
+mrva$site_no <- sub("^", "x", mrva$site_no)
+
+# Simplify for ArcGIS 
+
+mrva_simple <- mrva %>% 
+  select(-well_depth:-keep, -vkbg_thick:-cum_thick)
+
+# Write as tsv 
+write_tsv(mrva_simple, here::here("me_data", "arc_input", "mrva.txt"))
+
+```
+
+
+Confined aquifers 
+n = 9287
+
+```{r}
+# All aquifers that are confined by our criteria  
+
+me_confined <- me_cum_thickness %>% 
+  filter(keep == "keep" & !aquifer == "mrva")
+
+# Add character value in front of site_no column as workaround for ArcGIS issue
+
+me_confined$site_no <- sub("^", "x", me_confined$site_no)
+
+# Simplify for ArcGIS 
+
+me_confined_simple <- me_confined %>% 
+  select(-well_depth:-keep, -vkbg_thick:-cum_thick)
+
+# Write as tsv 
+write_tsv(me_confined_simple, here::here("me_data", "arc_input", "me_confined.txt"))
+```
+
+
+
