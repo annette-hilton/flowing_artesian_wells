@@ -40,7 +40,7 @@ options(scipen=999)
 ```{r}
 # Read in the full dataset for all well water measurements for the USA 
 
-entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usgs_usa.txt"))
+entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usa_2021.txt"))
 ```
 
 # Tidy Data 
@@ -57,7 +57,7 @@ entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usgs_usa.txt"))
  
 ```{r}
 usgs_modern <- entire_usa_gw %>% 
-  filter(!well_depth_va == "NA" | !hole_depth_va == "NA") %>% 
+  filter(!well_depth_va == "NA") %>% 
   filter(!well_depth_va == 0.00) %>% 
   filter(!lev_dt == "NA") %>%
   filter(!is.na(lev_va)) %>% 
@@ -68,13 +68,15 @@ usgs_modern_med <- usgs_modern %>%
   group_by(site_no) %>% 
   mutate(median = median(lev_va)) %>% 
   distinct(site_no, .keep_all = TRUE) %>% 
-  mutate(artesian = ifelse(median <= 0, 1, 0))
+  mutate(artesian = ifelse(median <= 0, 1, 0)) %>% 
+  select(site_no, dec_lat_va, dec_long_va, well_depth_va, lev_va, level_date, level_year, id.x)
 
 usgs_modern_med$site_no <- sub("^", "w", usgs_modern_med$site_no)
 
 write_tsv(usgs_modern_med, here::here("output_data", "usgs_modern.txt"))
 ```
-
+ 
+------------------------------------------------------------------------------------
 Just South Dakota 
 
 
