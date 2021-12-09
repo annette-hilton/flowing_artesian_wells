@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error = FAL
 
 # Introduction
 
-This project...
+This project is an examination of early 1900s (~1890-1906) groundwater conditions in the Mississippi Embayment (ME) as compared to present day (2010-2021).
 
 The purpose of this Rmd is to: 
 
@@ -19,14 +19,15 @@ The purpose of this Rmd is to:
 
 1) Prep data for input to ArcGIS (for hydrogeological analysis) 
 2) After ArcGIS processing: 
-  - Determine well-aquifer classification 
+
+1) Determine well-aquifer classification 
+2) 
 
 # Files Read-In & Written in this Rmd 
 
 Read-in: 
 
-1. "entire_usa_2021.txt" from folder "source_data" 
-  - Purpose: from RProject: "usa_groundwater_data", entire USGS well water measurements for all  sites in the USA as of December 2021 
+1. "usgs_modern.txt" 
 
 Written: 
 
@@ -343,123 +344,106 @@ me_class_1900 <- me_analysis_1900 %>%
 
 ```
 
-11/29/21 Addition/example: 
-
-```{r}
-me_mcaq_lccu <- me_class %>% 
-  filter(aquifer %in% c("mcaq", "lccu"))
-```
-
 Summary of wells per aquifer unit 
 
 ```{r}
 # Summary of wells per aquifer unit 
 
-summary_me <- me_class %>% 
+# Modern data 
+summarymod_me <- me_class_mod %>% 
   group_by(aquifer) %>% 
   count(aquifer) 
 
 write_tsv(summary_me, here::here("me_data", "summary_me.txt"))
-```
-
-#### Confined and Unconfined Well Criteria 
-
-Unconfined aquifer (MRVA): 
-
-- Criteria: Must have at least 10 m (33 ft) of confining material below 
-- Code: If the aquifer is MRVA, then calculate the sum of the confining unit thicknesses (VKBG, MCCU, LCCU). If the sum of the confining unit thicknesses is >= 33 ft (10m), then "keep" the well. 
-
-Confined aquifer units (UCAQ, MCAQ, LCAQ, MWAQ, LWAQ): 
-
-- Criteria: Must have at least 10 m (33 ft) of confining material above
-- Code: Dependent on the aquifer, calculate the sum of the confining unit thickness above. If the sum of the confining unit thickness is >= 33 ft (10m), then "keep" the well. 
 
 
-First, determine thickness of aquifer units 
+# 1900s data 
 
-```{r}
-# Thickness of aquifer units 
-
-me_thickness <- me_class %>% 
-  mutate(
-    vkbg_thick = vkbg_surf - ucaq_surf, 
-    ucaq_thick = ucaq_surf - mccu_surf, 
-    mccu_thick = mccu_surf - mcaq_surf, 
-    mcaq_thick = mcaq_surf - lccu_surf, 
-    lccu_thick = lccu_surf - lcaq_surf, 
-    lcaq_thick = lcaq_surf - mwaq_surf, 
-    mwaq_thick = mwaq_surf - lwaq_surf, 
-    lwaq_thick = lwaq_surf - mdwy_surf
-  )
+summary1900_me <- me_class_1900 %>% 
+  group_by(aquifer) %>% 
+  count(aquifer)
 
 ```
 
-Then, determine cumulative thickness & which wells meet criteria 
+#### Add criteria to include wells only drilled in confining unit by 10 feet 
+
+For aquifer MCAQ (wells in confining unit LCCU) 
+
 
 ```{r}
-# Only consider confining units for thickness 
-# VKBG, MCCU, LCCU
+# Modern data (adds 7 wells)
+confining_depth_mod <- me_class_mod %>% 
+  mutate(testing = 
+           ifelse(aquifer == "lccu" & well_bottom > (lccu_surf - 10), "c.mcaq", NA))
 
-me_cum_thickness <- me_thickness %>% 
-  rowwise() %>% 
-    dplyr::mutate(cum_thick = 
-        ifelse(aquifer == "mrva", sum(vkbg_thick, mccu_thick, na.rm = TRUE), 
-        ifelse(aquifer == "ucaq", sum(vkbg_thick), 
-        ifelse(aquifer == "mcaq", sum(vkbg_thick, mccu_thick, na.rm = TRUE),
-        ifelse(aquifer == "lcaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE), 
-        ifelse(aquifer == "mwaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE), 
-        ifelse(aquifer == "lwaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE), 
-               NA))))))) %>% 
-  dplyr::mutate(keep = 
-           ifelse(cum_thick >= 33, "keep", NA))
+# 1900s data (adds 1 well)
+confining_depth_1900<- me_class_1900 %>% 
+  mutate(testing = 
+           ifelse(aquifer == "lccu" & well_bottom > (lccu_surf - 10), "c.mcaq", NA))
 ```
 
+#### Comparison of artesian conditions 
 
-### Separate each aquifer/unit and confined vs unconfined 
-
-Unconfined aquifer (MRVA) 
-n = 16068
+MCAQ (Middle Claiborne Aquifer) 1900 to 2010-2020 
 
 ```{r}
-# MRVA 
-mrva <- me_cum_thickness %>% 
-  filter(aquifer == "mrva" & keep == "keep")
+# Separate MCAQ & C.MCAQ units 
 
-# Add character value in front of site_no column as workaround for ArcGIS issue
+# Modern 
+modern_mcaq <- confining_depth_mod %>% 
+  filter(aquifer == "mcaq" | testing == "c.mcaq") %>% 
+  mutate(artesian = 
+           ifelse(lev_va < 0, 1, 0))
 
-mrva$site_no <- sub("^", "x", mrva$site_no)
+# write file for arc 
 
-# Simplify for ArcGIS 
+write_tsv(modern_mcaq, here::here("output_data", "me", "modern_mcaq.txt"))
 
-mrva_simple <- mrva %>% 
-  select(-well_depth:-keep, -vkbg_thick:-cum_thick)
+# 1900s 
+historical_mcaq <- confining_depth_1900 %>% 
+  filter(aquifer == "mcaq" | testing == "c.mcaq") 
 
-# Write as tsv 
-write_tsv(mrva_simple, here::here("me_data", "arc_input", "mrva.txt"))
+# write file for arc 
+
+write_tsv(historical_mcaq, here::here("output_data", "me", "historical_mcaq.txt"))
 
 ```
 
 
-Confined aquifers 
-n = 9287
 
+
+
+------------------------------------------------------------------
 ```{r}
-# All aquifers that are confined by our criteria  
+# Graph these differences 
 
-me_confined <- me_cum_thickness %>% 
-  filter(keep == "keep" & !aquifer == "mrva")
+# join summaries 
 
-# Add character value in front of site_no column as workaround for ArcGIS issue
+full_summary <- summary1900_me %>% 
+  full_join(summarymod_me, by = "aquifer") %>% 
+  rename(historical = n.x, 
+         modern = n.y)
 
-me_confined$site_no <- sub("^", "x", me_confined$site_no)
+write_tsv(full_summary, "full_summary_aquifers.txt")
 
-# Simplify for ArcGIS 
-
-me_confined_simple <- me_confined %>% 
-  select(-well_depth:-keep, -vkbg_thick:-cum_thick)
-
-# Write as tsv 
-write_tsv(me_confined_simple, here::here("me_data", "arc_input", "me_confined.txt"))
+# 
+# 
+# # Graph 
+# 
+# ggplot(full_summary) + 
+#   geom_point(aes(x = aquifer, y = historical)) + 
+#   geom_segment(aes(x = aquifer, xend = aquifer, y = 0, yend = historical)) +
+#   geom_point(aes(x = aquifer, y = modern)) +
+#   geom_segment(aes(x = aquifer, xend = aquifer, y = 0, yend = modern))
+# 
+# ggplot(data = full_summary) + 
+#   geom_bar(aes(x = aquifer, y = historical), position = position_dodge())
+# 
+# 
+# 
+# 
+# ggplot(data = full_summary, aes(x = aquifer, y = historical, fill = modern)) +
+#   geom_bar(stat = "identity", position = position_dodge(), alpha = 0.75)
 ```
 
 
