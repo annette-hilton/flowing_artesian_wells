@@ -22,20 +22,6 @@ The purpose of this Rmd is to:
 
 1) Determine well-aquifer classification 
 2) 
-
-# Files Read-In & Written in this Rmd 
-
-Read-in: 
-
-1. "usgs_modern.txt" 
-
-Written: 
-
-1. "unique_me_wells.txt" in folder "me_data":"arc_input" 
-  - Purpose: Filtered to ME states only, unique sites (for use in ArcGIS) 
-  
-2. "me_analysis.txt" in folder "me_data" 
-  - Purpose: Unique ME sites (processed in ArcGIS for only ME sites that intersect the aquifer units) with true topography and well bottom 
   
 
 ## Attach Packages and Data 
@@ -123,9 +109,15 @@ fl_mod_fromarc <- readr::read_csv(here::here("data", "fl", "fl_modern_hydro.txt"
 
 early1900s_fromarc <- readr::read_csv(here::here("data", "fl", "early1900swells_fl.txt"))
 
+# Read in meta file for early 1900s 
+
+early1900s_meta <- readr::read_tsv(here::here("output_data", "early1900s_arc.txt"))
+
 ```
 
 Tidy data 
+**Note: ArcGIS somehow messes up data (water level, well depth)--from DEM, only keep the site ID and the DEM value. For 1900s data, join with old file here. 
+Modern file already joined above. 
 
 ```{r}
 # Basic data tidying 
@@ -156,6 +148,7 @@ fl_mod_tidy <- fl_mod_fromarc %>%
                 oldspz_top = fig49_top_oldspz_raster_copy,
                 oldspz_bot = fig24_lowreszone_below_oldsp)
 
+
 # 1900s data 
 
 early1900s_tidy <- early1900s_fromarc %>% 
@@ -175,6 +168,13 @@ early1900s_tidy <- early1900s_fromarc %>%
                 glauc_top = fig48_top_glaucunit_raster_c,
                 oldspz_top = fig49_top_oldspz_raster_copy,
                 oldspz_bot = fig24_lowreszone_below_oldsp)
+
+# Join with meta file 
+
+early1900s_join <- early1900s_tidy %>% 
+  full_join(early1900s_meta, by = "id") %>% 
+  clean_names() %>% 
+  select(-latitude_x:-artesian_x)
 
 ```
 
@@ -229,7 +229,9 @@ Two:
 # Add a column that is elevation minus well depth
 # Add column to remove rows if surf_thick:oldspz_top are all NAs (does not intersect with FL) 
 
-fl_analysis_first <- arc_join_fl_tidy %>% 
+# Modern data 
+
+fl_analysis_mod <- fl_mod_tidy %>% 
   mutate(topo_ft = rastervalu * 3.28084) %>% 
   mutate(well_bottom = topo_ft - well_depth_va) %>% 
    mutate(keep = 
@@ -238,7 +240,19 @@ fl_analysis_first <- arc_join_fl_tidy %>%
                   & is.na(lisapcu_top) & is.na(lf_top) & is.na(mapcu_top)
                   & is.na(lappz_top) & is.na(glauc_top) & is.na(oldspz_top), "NA", "keep")) %>% 
   filter(!keep == "NA")
-  
+
+
+# 1900s data 
+
+fl_analysis_1900 <- early1900s_join %>% 
+  mutate(topo_ft = ned10m_bilinear_cusa_albers102003 * 3.28084) %>% 
+  mutate(well_bottom = topo_ft - well_depth_ft_y) %>% 
+   mutate(keep = 
+           ifelse(is.na(surf_thick) & is.na(ucu_thick) & is.na(uf_top) 
+                  & is.na(buca_top) & is.na(ocaplpz_top) & is.na(appz_top)
+                  & is.na(lisapcu_top) & is.na(lf_top) & is.na(mapcu_top)
+                  & is.na(lappz_top) & is.na(glauc_top) & is.na(oldspz_top), "NA", "keep")) %>% 
+  filter(!keep == "NA")
 ```
 
 ### Extra Step--Calculate top of UCU 
@@ -252,16 +266,28 @@ fl_analysis_first <- arc_join_fl_tidy %>%
 
 
 ```{r}
+# Modern data 
 
-fl_analysis <- fl_analysis_first %>% 
+fl_analysis_mod_2 <- fl_analysis_mod %>% 
   mutate(ucu_top = uf_top + ucu_thick, 
          surf_top = ucu_top + surf_thick) %>% 
-  select(site_no, dec_lat_va, dec_long_va, well_depth_va, 
-         hole_depth_va, alt_va, topo_ft, surf_top, ucu_top,
-         uf_top, buca_top, buca_bot, ocaplpz_top, appz_top, lisapcu_top, mapcu_top, lf_top, 
-        lappz_top, glauc_top, oldspz_top, oldspz_bot, well_bottom)
+  select(site_no, dec_lat_va, dec_long_va, well_depth_va,lev_va,
+         level_date, level_year, x, rastervalu, topo_ft, 
+         surf_top, ucu_top, uf_top, buca_top, buca_bot, 
+         ocaplpz_top, appz_top, lisapcu_top, mapcu_top, lf_top,
+         lappz_top, glauc_top, oldspz_top, oldspz_bot, well_bottom)
 
-write_tsv(fl_analysis, here::here("fl_data", "fl_analysis.txt"))
+# 1900s data 
+
+fl_analysis_1900_2 <- fl_analysis_1900 %>% 
+  mutate(ucu_top = uf_top + ucu_thick, 
+         surf_top = ucu_top + surf_thick) %>% 
+  select(id, latitude_y, longitude_y, well_depth_ft_y, 
+         water_level_ft_y, artesian_y, ned10m_bilinear_cusa_albers102003, 
+         topo_ft, surf_top, ucu_top, uf_top, buca_top, buca_bot, 
+         ocaplpz_top, appz_top, lisapcu_top, mapcu_top, lf_top,
+         lappz_top, glauc_top, oldspz_top, oldspz_bot, well_bottom)
+
 ```
 
 #### Classify each well to an aquifer unit 
@@ -312,7 +338,9 @@ Two:
 # Code for assigning each well to an aquifer unit 
 # Not elegant but currently works! 
 
-fl_class <- fl_analysis %>% 
+# Modern data 
+
+fl_class_mod <- fl_analysis_mod_2 %>% 
   rowwise() %>%
   mutate(aquifer = 
         ifelse(well_bottom < topo_ft & well_bottom >= max(ucu_top, uf_top, buca_top, buca_bot, ocaplpz_top, 
@@ -338,27 +366,77 @@ fl_class <- fl_analysis %>%
         ifelse(well_bottom < glauc_top & well_bottom >= max(oldspz_top, oldspz_bot, na.rm = TRUE), "glauc",
         ifelse(well_bottom < oldspz_top & well_bottom > oldspz_bot, "oldspz", NA)))))))))))))
 
+
+# 1900s data 
+
+fl_class_1900 <- fl_analysis_1900_2 %>% 
+  rowwise() %>%
+  mutate(aquifer = 
+        ifelse(well_bottom < topo_ft & well_bottom >= max(ucu_top, uf_top, buca_top, buca_bot, ocaplpz_top, 
+                                                          appz_top, lisapcu_top, lf_top, mapcu_top, 
+                                                          lappz_top, glauc_top, oldspz_top, oldspz_bot,
+                                                          na.rm = TRUE), "surf", 
+        ifelse(well_bottom < ucu_top & well_bottom >= uf_top,"ucu",
+        ifelse(well_bottom < uf_top & well_bottom >= max(buca_top, buca_bot, lisapcu_top, ocaplpz_top, appz_top, 
+                                                         lf_top, mapcu_top, lappz_top, glauc_top, oldspz_top, 
+                                                         oldspz_bot, na.rm = TRUE), "upper_fl", 
+        ifelse(well_bottom < buca_top & well_bottom >= max(buca_bot, lisapcu_top, ocaplpz_top, appz_top, lf_top, 
+                                                           mapcu_top, lappz_top, glauc_top, oldspz_top, na.rm = TRUE), "buca", 
+        ifelse(well_bottom < lisapcu_top & well_bottom >= max(ocaplpz_top, appz_top, lf_top, mapcu_top, lappz_top, 
+                                                              glauc_top, oldspz_top, oldspz_bot, na.rm = TRUE),"lisapcu",
+        ifelse(well_bottom < ocaplpz_top & well_bottom >= max(appz_top, lf_top, mapcu_top, lappz_top, glauc_top, 
+                                                              oldspz_top, oldspz_bot, na.rm = TRUE), "ocaplpz", 
+        ifelse(well_bottom < appz_top & well_bottom >= max(lisapcu_top, lf_top, mapcu_top, lappz_top, glauc_top, 
+                                                           oldspz_top, oldspz_bot, na.rm = TRUE), "appz", 
+        ifelse(well_bottom < mapcu_top & well_bottom >= max(lf_top, lappz_top, glauc_top, oldspz_top, oldspz_bot, 
+                                                            na.rm = TRUE), "mapcu",
+        ifelse(well_bottom < lf_top & is.na(lappz_top) & is.na(glauc_top) & is.na(oldspz_top) & is.na(oldspz_bot), "lower_fl",
+        ifelse(well_bottom < lappz_top & well_bottom >= max(glauc_top, oldspz_top, oldspz_bot, na.rm = TRUE), "lappz",
+        ifelse(well_bottom < glauc_top & well_bottom >= max(oldspz_top, oldspz_bot, na.rm = TRUE), "glauc",
+        ifelse(well_bottom < oldspz_top & well_bottom > oldspz_bot, "oldspz", NA)))))))))))))
 ```
 
+```{r}
+# everything that is NA/did not get classified 
+
+
+na_fl <- fl_class_mod %>% 
+  filter(is.na(aquifer))
+
+write_tsv(na_fl, "na_fl.txt")
+```
 
 Summary of wells per aquifer unit 
 
 ```{r}
 # Summary of wells per aquifer unit 
 
-summary_fl<- fl_class %>% 
+# Modern data 
+summarymod_fl <- fl_class_mod %>% 
   group_by(aquifer) %>% 
   count(aquifer) 
 
-write_tsv(summary_fl, here::here("fl_data", "summary_fl.txt"))
+
+# 1900s data 
+
+summary1900_fl <- fl_class_1900 %>% 
+  group_by(aquifer) %>% 
+  count(aquifer)
+
+
+
+# join summaries 
+
+full_summary <- summary1900_fl %>% 
+  full_join(summarymod_fl, by = "aquifer") %>% 
+  rename(historical = n.x, 
+         modern = n.y)
+
+write_tsv(summary_me, here::here("fl_data", "summary_me.txt"))
+
 ```
 
-#### Confined and Unconfined Well Criteria 
-
-Unconfined aquifer (SURF): 
-
-- Criteria: Must have at least 10 m (33 ft) of confining material below 
-- Code: If the aquifer is SURF, then calculate the sum of the confining unit thicknesses (UCU, Bucatunna). If the sum of the confining unit thicknesses is >= 33 ft (10m), then "keep" the well. 
+#### Confined Well Criteria 
 
 Confined aquifer units (Upper Floridan, APPZ, LAPPZ, OLDSPZ, Lower Floridan): 
 
@@ -372,7 +450,16 @@ First, determine thickness of aquifer units
 ```{r}
 # Thickness of aquifer units 
 
-fl_thickness <- fl_class %>% 
+# Modern data 
+
+fl_thickness_mod <- fl_class_mod %>% 
+  mutate(
+    ucu_thick = ucu_top - uf_top, 
+    buca_thick = buca_top - buca_bot)
+
+# 1900s data 
+
+fl_thickness_1900 <- fl_class_1900 %>% 
   mutate(
     ucu_thick = ucu_top - uf_top, 
     buca_thick = buca_top - buca_bot)
@@ -385,7 +472,24 @@ Then, determine cumulative thickness & which wells meet criteria
 # Only consider confining units for thickness 
 # UCU, Bucatunna
 
-fl_cum_thickness <- fl_thickness %>% 
+# Modern data 
+
+fl_cum_thickness_mod <- fl_thickness_mod %>% 
+  rowwise() %>% 
+  mutate(cum_thick = 
+        ifelse(aquifer == "surf", sum(ucu_thick, buca_thick, na.rm = TRUE), 
+        ifelse(aquifer == "upper_fl", sum(ucu_thick), 
+        ifelse(aquifer == "appz", sum(ucu_thick),
+        ifelse(aquifer == "lappz", sum(ucu_thick), 
+        ifelse(aquifer == "oldspz", sum(ucu_thick), 
+        ifelse(aquifer == "lower_fl", sum(ucu_thick, buca_thick, na.rm = TRUE),
+        NA))))))) %>% 
+  mutate(keep = 
+           ifelse(cum_thick >= 33, "keep", NA))
+
+# 1900s data
+
+fl_cum_thickness_1900 <- fl_thickness_1900 %>% 
   rowwise() %>% 
   mutate(cum_thick = 
         ifelse(aquifer == "surf", sum(ucu_thick, buca_thick, na.rm = TRUE), 
@@ -400,51 +504,68 @@ fl_cum_thickness <- fl_thickness %>%
 ```
 
 
-### Separate each aquifer/unit and confined vs unconfined 
-
-Unconfined aquifer (SURF) 
-n = 1580
-
-
-```{r}
-# SURF
-surf <- fl_cum_thickness %>% 
-  filter(aquifer == "surf" & keep == "keep")
-
-# Add character value in front of site_no column as workaround for ArcGIS issue
-
-surf$site_no <- sub("^", "x", surf$site_no)
-
-# Simplify for ArcGIS 
-
-surf_simple <- surf %>% 
-  select(site_no, dec_lat_va, dec_long_va, aquifer)
-
-# Write as tsv 
-write_tsv(surf_simple, here::here("fl_data", "arc_input", "surf.txt"))
-
-```
-
+### Separate each aquifer/unit and confined 
 
 Confined aquifers 
-n = 3824
+
+Modern n = 880
+1900s n = 110
 
 ```{r}
 # All aquifers that are confined by our criteria  
+# Add artesian designation for modern data 
   
-fl_confined <- fl_cum_thickness %>% 
+# Modern data 
+fl_confined_mod <- fl_cum_thickness_mod %>% 
+  filter(keep == "keep" & !aquifer == "surf") %>% 
+  mutate(artesian = 
+           ifelse(lev_va < 0, 1, 0))
+
+# write file for arc 
+
+write_tsv(fl_confined_mod, here::here("output_data", "fl", "modern_confined.txt"))
+
+
+# 1900s data 
+
+fl_confined_1900 <- fl_cum_thickness_1900 %>% 
   filter(keep == "keep" & !aquifer == "surf")
 
-# Add character value in front of site_no column as workaround for ArcGIS issue
+# write file for arc 
 
-fl_confined$site_no <- sub("^", "x", fl_confined$site_no)
+write_tsv(fl_confined_1900, here::here("output_data", "fl", "historical_confined.txt"))
 
-# Simplify for ArcGIS 
-
-fl_confined_simple <- fl_confined %>% 
-  select(site_no, dec_lat_va, dec_long_va, aquifer, ucu_thick)
-
-# Write as tsv 
-write_tsv(fl_confined_simple, here::here("fl_data", "arc_input", "fl_confined.txt"))
 ```
+
+
+#### Comparison of artesian conditions 
+
+UF (Upper Floridan Aquifer) 1900 to 2010-2020 
+
+Modern n = 87
+1900s n = 1137
+
+```{r}
+# Separate UF units 
+
+# Modern 
+modern_uf <- fl_class_mod %>% 
+  filter(aquifer == "upper_fl") %>% 
+  mutate(artesian = 
+           ifelse(lev_va < 0, 1, 0))
+
+# write file for arc 
+
+write_tsv(modern_uf, here::here("output_data", "fl", "modern_uf.txt"))
+
+# 1900s 
+historical_uf <- fl_class_1900 %>% 
+  filter(aquifer == "upper_fl")
+
+# write file for arc 
+
+write_tsv(historical_uf, here::here("output_data", "fl", "historical_uf.txt"))
+
+```
+
 

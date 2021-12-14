@@ -242,5 +242,3 @@ Write as tsv for ArcGIS
 write_tsv(early1900s_arc, here::here("output_data", "early1900s_arc.txt"))
 ```
 
-
-

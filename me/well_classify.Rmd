@@ -363,6 +363,13 @@ summary1900_me <- me_class_1900 %>%
   group_by(aquifer) %>% 
   count(aquifer)
 
+# join summaries 
+
+full_summary <- summary1900_me %>% 
+  full_join(summarymod_me, by = "aquifer") %>% 
+  rename(historical = n.x, 
+         modern = n.y)
+
 ```
 
 #### Add criteria to include wells only drilled in confining unit by 10 feet 
@@ -382,9 +389,124 @@ confining_depth_1900<- me_class_1900 %>%
            ifelse(aquifer == "lccu" & well_bottom > (lccu_surf - 10), "c.mcaq", NA))
 ```
 
+#### Confined Well Criteria 
+
+Confined aquifer units (UCAQ, MCAQ, LCAQ, MWAQ, LWAQ): 
+
+- Criteria: Must have at least 10 m (33 ft) of confining material above
+- Code: Dependent on the aquifer, calculate the sum of the confining unit thickness above. If the sum of the confining unit thickness is >= 33 ft (10m), then "keep" the well. 
+
+
+First, determine thickness of aquifer units 
+
+```{r}
+# Thickness of aquifer units 
+
+# Modern data 
+
+me_thickness_mod <- me_class_mod %>% 
+  mutate(
+    vkbg_thick = vkbg_surf - ucaq_surf, 
+    ucaq_thick = ucaq_surf - mccu_surf, 
+    mccu_thick = mccu_surf - mcaq_surf, 
+    mcaq_thick = mcaq_surf - lccu_surf, 
+    lccu_thick = lccu_surf - lcaq_surf, 
+    lcaq_thick = lcaq_surf - mwaq_surf, 
+    mwaq_thick = mwaq_surf - lwaq_surf, 
+    lwaq_thick = lwaq_surf - mdwy_surf
+  )
+
+# 1900s data 
+
+me_thickness_1900 <- me_class_1900 %>% 
+  mutate(
+    vkbg_thick = vkbg_surf - ucaq_surf, 
+    ucaq_thick = ucaq_surf - mccu_surf, 
+    mccu_thick = mccu_surf - mcaq_surf, 
+    mcaq_thick = mcaq_surf - lccu_surf, 
+    lccu_thick = lccu_surf - lcaq_surf, 
+    lcaq_thick = lcaq_surf - mwaq_surf, 
+    mwaq_thick = mwaq_surf - lwaq_surf, 
+    lwaq_thick = lwaq_surf - mdwy_surf
+  )
+
+```
+
+Then, determine cumulative thickness & which wells meet criteria 
+
+```{r}
+# Only consider confining units for thickness 
+# VKBG, MCCU, LCCU
+
+# Modern 
+
+me_cum_thickness_mod <- me_thickness_mod %>% 
+  rowwise() %>% 
+    dplyr::mutate(cum_thick = 
+        ifelse(aquifer == "mrva", sum(vkbg_thick, mccu_thick, na.rm = TRUE), 
+        ifelse(aquifer == "ucaq", sum(vkbg_thick), 
+        ifelse(aquifer == "mcaq", sum(vkbg_thick, mccu_thick, na.rm = TRUE),
+        ifelse(aquifer == "lcaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE), 
+        ifelse(aquifer == "mwaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE), 
+        ifelse(aquifer == "lwaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE), 
+               NA))))))) %>% 
+  dplyr::mutate(keep = 
+           ifelse(cum_thick >= 33, "keep", NA))
+
+
+# 1900s 
+
+me_cum_thickness_1900 <- me_thickness_1900 %>% 
+  rowwise() %>% 
+    dplyr::mutate(cum_thick = 
+        ifelse(aquifer == "mrva", sum(vkbg_thick, mccu_thick, na.rm = TRUE), 
+        ifelse(aquifer == "ucaq", sum(vkbg_thick), 
+        ifelse(aquifer == "mcaq", sum(vkbg_thick, mccu_thick, na.rm = TRUE),
+        ifelse(aquifer == "lcaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE), 
+        ifelse(aquifer == "mwaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE), 
+        ifelse(aquifer == "lwaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE), 
+               NA))))))) %>% 
+  dplyr::mutate(keep = 
+           ifelse(cum_thick >= 33, "keep", NA))
+```
+
+
+### Separate each aquifer/unit and confined 
+
+Confined aquifers 
+* Does not include confining unit 
+
+Modern n = 205
+1900s n = 675
+
+```{r}
+# All aquifers that are confined by our criteria  
+
+# Modern data 
+me_confined_mod <- me_cum_thickness_mod %>% 
+  filter(keep == "keep" & !aquifer == "mrva") %>% 
+  mutate(artesian = 
+           ifelse(lev_va < 0, 1, 0))
+
+# Write as tsv 
+write_tsv(me_confined_mod, here::here("output_data", "me", "me_confined_mod.txt"))
+
+# 1900 data 
+me_confined_1900 <- me_cum_thickness_1900 %>% 
+  filter(keep == "keep" & !aquifer == "mrva")
+
+# Write as tsv 
+write_tsv(me_confined_1900, here::here("output_data", "me", "me_confined_historical.txt"))
+
+```
+
+
 #### Comparison of artesian conditions 
 
 MCAQ (Middle Claiborne Aquifer) 1900 to 2010-2020 
+
+Modern = 779 
+1900 = 149 
 
 ```{r}
 # Separate MCAQ & C.MCAQ units 
@@ -410,6 +532,33 @@ write_tsv(historical_mcaq, here::here("output_data", "me", "historical_mcaq.txt"
 ```
 
 
+MCAQ (Middle Claiborne Aquifer) & LCCU 1900 to 2010-2020 
+
+Modern n = 849
+1900 n = 250
+
+```{r}
+# Separate MCAQ & LCCU units 
+
+# Modern 
+modern_mcaq_lccu <- me_cum_thickness_mod %>% 
+  filter(aquifer == "mcaq" | aquifer == "lccu") %>% 
+  mutate(artesian = 
+           ifelse(lev_va < 0, 1, 0))
+
+# write file for arc 
+
+write_tsv(modern_mcaq_lccu, here::here("output_data", "me", "modern_mcaq_lccu.txt"))
+
+# 1900s 
+historical_mcaq_lccu <- me_cum_thickness_1900 %>% 
+  filter(aquifer == "mcaq" | aquifer == "lccu") 
+
+# write file for arc 
+
+write_tsv(historical_mcaq_lccu, here::here("output_data", "me", "historical_mcaq_lccu.txt"))
+
+```
 
 
 
