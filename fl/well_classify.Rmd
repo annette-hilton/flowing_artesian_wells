@@ -148,6 +148,12 @@ fl_mod_tidy <- fl_mod_fromarc %>%
                 oldspz_top = fig49_top_oldspz_raster_copy,
                 oldspz_bot = fig24_lowreszone_below_oldsp)
 
+# Join with meta file 
+
+fl_mod_join <- fl_mod_tidy %>% 
+  full_join(modern_join, by = "site_no") %>% 
+  select(-dec_lat_va.x:-x, -RASTERVALU) %>% 
+  clean_names()
 
 # 1900s data 
 
@@ -231,9 +237,9 @@ Two:
 
 # Modern data 
 
-fl_analysis_mod <- fl_mod_tidy %>% 
+fl_analysis_mod <- fl_mod_join %>% 
   mutate(topo_ft = rastervalu * 3.28084) %>% 
-  mutate(well_bottom = topo_ft - well_depth_va) %>% 
+  mutate(well_bottom = topo_ft - well_depth_va_y) %>% 
    mutate(keep = 
            ifelse(is.na(surf_thick) & is.na(ucu_thick) & is.na(uf_top) 
                   & is.na(buca_top) & is.na(ocaplpz_top) & is.na(appz_top)
@@ -271,11 +277,11 @@ fl_analysis_1900 <- early1900s_join %>%
 fl_analysis_mod_2 <- fl_analysis_mod %>% 
   mutate(ucu_top = uf_top + ucu_thick, 
          surf_top = ucu_top + surf_thick) %>% 
-  select(site_no, dec_lat_va, dec_long_va, well_depth_va,lev_va,
-         level_date, level_year, x, rastervalu, topo_ft, 
+  select(site_no, lat, long, well_depth_va_y, median,
+         level_date_y, level_year_y, id_x, rastervalu, topo_ft, 
          surf_top, ucu_top, uf_top, buca_top, buca_bot, 
          ocaplpz_top, appz_top, lisapcu_top, mapcu_top, lf_top,
-         lappz_top, glauc_top, oldspz_top, oldspz_bot, well_bottom)
+         lappz_top, glauc_top, oldspz_top, oldspz_bot, well_bottom, artesian)
 
 # 1900s data 
 
@@ -399,7 +405,6 @@ fl_class_1900 <- fl_analysis_1900_2 %>%
 ```{r}
 # everything that is NA/did not get classified 
 
-
 na_fl <- fl_class_mod %>% 
   filter(is.na(aquifer))
 
@@ -432,7 +437,7 @@ full_summary <- summary1900_fl %>%
   rename(historical = n.x, 
          modern = n.y)
 
-write_tsv(summary_me, here::here("fl_data", "summary_me.txt"))
+write_tsv(full_summary, here::here("output_data", "fl", "full_summary.txt"))
 
 ```
 
@@ -519,7 +524,7 @@ Modern n = 880
 fl_confined_mod <- fl_cum_thickness_mod %>% 
   filter(keep == "keep" & !aquifer == "surf") %>% 
   mutate(artesian = 
-           ifelse(lev_va < 0, 1, 0))
+           ifelse(median < 0, 1, 0))
 
 # write file for arc 
 
