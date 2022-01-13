@@ -1,0 +1,41 @@
+---
+title: "References"
+author: "Annette Hilton"
+date: "1/13/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Literature Referenced 
+
+## By Aquifer System 
+
+
+### North Atlantic Coastal Plain: 
+
+Hydrogeologic data: 
+
+Pope, J.P., Andreasen, D.C., McFarland, E.R., and Watt, M.K., 2016, Digital elevations and extents of regional hydrogeologic units in the Northern Atlantic Coastal Plain aquifer system from Long Island, New York, to North Carolina (ver. 1.1, January 2021) : U.S. Geological Survey data release, https://doi.org/10.5066/F70V89WN.
+
+Report: 
+
+Pope, J.P., Andreasen, D.C., McFarland, E.R., and Watt, M.K., 2016, Digital elevations and extents of regional hydrogeologic units in the Northern Atlantic Coastal Plain aquifer system from Long Island, New York, to North Carolina (ver. 1.1, December 2020): U.S. Geological Survey Data Series 996, 28 p., https://doi.org/10.3133/ds996.
+
+### Central Valley Aquifer: 
+
+Faunt, C.C. ed., 2009, Groundwater Availability of the Central Valley Aquifer: U.S. Geological Survey Professional Paper 1766, 225 p. Available at https://pubs.usgs.gov/pp/1766/ 
+
+### Mississippi Embayment Aquifer system: 
+
+ Hart, R.M., Clark, B.R., and Bolyard, S.E., 2008, Digital surfaces and thicknesses of selected hydrogeologic units within the Mississippi Embayment Regional Aquifer Study (MERAS): U.S. Geological Survey Scientific Investigations Report 2008-5098, 33 p.
+
+### Floridan Aquifer system: 
+
+Williams, L.J., and Dixon, J.F., 2015, Digital surfaces and thicknesses of selected hydrogeologic units of the Floridan aquifer system in Florida and parts of Georgia, Alabama, and South Carolina: U.S. Geological Survey Data Series 926, 24 p., https://dx.doi.org/10.3133/ds926.
+
+### Texas Gulf Coast Aquifer system: 
+
+### 
