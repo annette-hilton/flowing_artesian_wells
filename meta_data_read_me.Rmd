@@ -9,8 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Vertical hydraulic gradients shift over 100 years
-## A comparison of vertical hydraulic gradients from the early 1900s to 2010-2020 
+# Artesian conditions over 100+ years 
+## A comparison of artesian conditions from the early 1900s to 2010-2020 
 
 
 ## Purpose & Objectives 
@@ -19,6 +19,14 @@ The purpose of this project is to compare groundwater movement (vertical hydraul
 
 
 ## Data Sources 
+
+1. Groundwater data 
+- Early 1900s   
+- Modern (2010-2021)   
+2. Digital Elevation Model (DEM) 
+3. Hydrogeologic data 
+
+## 1. Groundwater Data 
 
 ### Early 1900s Groundwater Data 
 
@@ -55,7 +63,7 @@ Data Compilation/Digitization
 
 Data Cleaning 
 
-- All 5 documents were merged into one large dataset, keeping important information that was consistent across documents 
+- All 5 documents were merged into one large dataset, keeping important information that is consistent across documents 
   - id 
   - county 
   - city 
@@ -79,3 +87,167 @@ Data Cleaning
   - Geocode by Awesome Table Add-On in Google Sheets (where city, state was available)
   - Township, section, range only available--plotted in ArcGIS, lat/long taken from center of TRS
   - For wells where more "specific location" were available, lat/long offset calculated 
+  
+### Modern Groundwater Data 
+  
+**United States Geological Survey** 
+
+Includes:  
+
+- Central Valley Aquifer   
+- Mississippi Embayment Aquifer System 
+- North Atlantic Coastal Plain 
+- Floridan Aquifer System 
+- Texas Gulf Coast Aquifer System  
+
+Data source: United States Geological Survey   
+Datum: North American Datum 1983  
+Type: Table   
+Year Published: 2010-2021   
+Data downloaded: 12/01/2021  
+
+Data are derived from two USGS sites: 
+
+- [USGS Groundwater Levels REST Web Service URL Generation Tool](https://waterservices.usgs.gov/rest/GW-Levels-Test-Tool.html)
+  
+- [National Water Information System: Web Interface](https://nwis.waterdata.usgs.gov/nwis/si)  
+  
+Additional data sources: 
+
+- Central Valley Aquifer 
+  - Department of Water Resources, California 
+  - Date downloaded: 01/13/2022
+  - URL: https://dwr.maps.arcgis.com/apps/webappviewer/index.html?id=181078580a214c0986e2da28f8623b37
+  - Datum: WGS84 
+  - Type: Table 
+  
+
+## 2. Digital Elevation Model (DEM) 
+
+
+## 3. Hydrogeologic data 
+  
+  Central Valley Aquifer  
+  Mississippi Embayment Aquifer System   
+  North Atlantic Coastal Plain   
+  Floridan Aquifer System   
+  Texas Gulf Coast Aquifer System   
+  
+
+### Central Valley Aquifer 
+
+ Data source: United States Geological Survey   
+ Projection: Albers Conical Equal Area   
+ Datum: North American Datum of 1983  
+ Type: Raster   
+ Year Published: 2012   
+ 
+ Date downloaded: 06/23/2020  
+ URL: https://ca.water.usgs.gov/projects/central-valley/central-valley-hydrologic-model.html  
+ Webpage title: California's Central Valley   
+ Model: Central Valley Hydrologic Model    
+ Instructions:   
+  - Click on: "Central Valley Spatial Database (Raw Data)" and "Central Valley Hydrological Model Database (Processed Data)"  
+  - Download Hydrological Model (ZIP File): Layers 4 & 5 represent Corcoran Clay. Layer 6 represents bottom of Corcoran Clay.   
+ 
+ Metadata page: https://ca.water.usgs.gov/projects/central-valley/central-valley-hydrologic-model.html  
+ Webpage title: California's Central Valley   
+ Reports to reference:   
+  - ["Groundwater Availability of the Central Valley Aquifer, California | PP 1766"](https://pubs.usgs.gov/pp/1766/PP_1766.pdf)   
+  
+  Data Citation:  
+  Faunt, C.C. ed., 2009, Groundwater Availability of the Central Valley Aquifer: U.S. Geological Survey Professional Paper 1766, 225 p. Available at https://pubs.usgs.gov/pp/1766/  
+  
+
+### Mississippi Embayment Aquifer System 
+
+ Data source: United States Geological Survey   
+ Projection: USA Contiguous Albers Equal Area Conic USGS Version   
+ Datum: North American Datum of 1983   
+ Type: Raster   
+ Year Published: 2008   
+ 
+ Date downloaded: 02/11/2020  
+ URL: https://pubs.usgs.gov/sir/2008/5098/downloads/WRD_NSDI_Node.html  
+ Webpage title: Digital Surfaces and Thicknesses of Selected Hydrogeologic Units within the Mississippi Embayment Regional Study        Aquifer (MERAS)   
+ Model: Hydrologic Model Layer Surfaces   
+ 
+ Metadata page: https://pubs.usgs.gov/sir/2008/5098/  
+ Webpage title: Digital Surfaces and Thicknesses of Selected Hydrogeologic Units within the Mississippi Embayment Regional Study        Aquifer (MERAS)   
+ Reports to reference:   
+  - "Digital Surfaces and Thicknesses of Selected Hydrogeologic Units within the Mississippi Embayment Regional Study Aquifer (MERAS)"     | SIR 2008-5098  
+  
+  Data Citation:  
+  Hart, R.M., Clark, B.R., and Bolyard, S.E., 2008, Digital surfaces and thicknesses of selected hydrogeologic units within the Mississippi Embayment Regional Aquifer Study (MERAS): U.S. Geological Survey Scientific Investigations Report 2008-5098, 33 p.
+
+
+
+### North Atlantic Coastal Plain Aquifer System 
+
+ Data source: United States Geological Survey   
+ Projection: NAD 1983 Albers   
+ Datum: North American Datum of 1983   
+ Type: Raster   
+ Year Published: 2016  
+ 
+ Date downloaded: 06/01/2020  
+ URL: https://www.sciencebase.gov/catalog/item/57df93b2e4b090825000fb55  
+ Webpage title: Digital elevations and extents of regional hydrogeologic units in the Northern Atlantic Coastal Plain aquifer system   
+ Instructions:   
+ - Download "nacp_elevation_raster_files.zip" raster file  
+ 
+ Metadata page: https://www.sciencebase.gov/catalog/item/57df93b2e4b090825000fb55  
+ Webpage title: Digital elevations and extents of regional hydrogeologic units in the Northern Atlantic Coastal Plain aquifer system  
+ Reports to reference:   
+  - ["Digital Elevations and Extents of Regional Hydrogeologic Units in the Northern Atlantic     Coastal Plain Aquifer System from Long Island, New York, to North Carolina | DS 996"](https://pubs.er.usgs.gov/publication/ds996)  
+  
+  Data Citation:  
+  Pope, J.P., Andreasen, D.C., McFarland, E.R., and Watt, M.K., 2016, Digital elevations and      extents of regional hydrogeologic units in the Northern Atlantic Coastal Plain aquifer system   from Long Island, New York, to North Carolina (ver. 1.1, January 2021) : U.S. Geological        Survey data release, https://doi.org/10.5066/F70V89WN.  
+
+### Floridan Aquifer System 
+
+ Data source: United States Geological Survey   
+ Projection: NAD 1983 Albers   
+ Datum: North American Datum of 1983   
+ Type: Raster   
+ Year Published: 2015   
+ 
+ Date downloaded: 07/08/2020  
+ URL: https://pubs.usgs.gov/ds/0926/ 
+ Webpage title: Digital Surfaces and Thicknesses of Selected Hydrogeologic Units of the Floridan Aquifer System in Florida and Parts of Georgia, Alabama, and South Carolina 
+ Instructions:   
+ - Download "DS 926 ASCII raster files"
+ 
+ Metadata page: https://pubs.usgs.gov/ds/0926/  
+ Webpage title: Digital Surfaces and Thicknesses of Selected Hydrogeologic Units of the Floridan Aquifer System in Florida and Parts of Georgia, Alabama, and South Carolina 
+ Reports to reference:   
+  - ["Digital Surfaces and Thicknesses of Selected Hydrogeologic Units of the Floridan Aquifer System in Florida and Parts of Georgia, Alabama, and South Carolina | DS 926"](https://pubs.usgs.gov/ds/0926/pdf/ds926.pdf)  
+  - ["Revised Hydrogeologic Framework of the Floridan Aquifer System in Florida and Parts of Georgia, Alabama, and South Carolina | PP 1807"](http://dx.doi.org/10.3133/pp1807) 
+  
+  Data Citation:  
+  Williams, L.J., and Dixon, J.F., 2015, Digital surfaces and thicknesses of selected hydrogeologic units of the Floridan aquifer system in Florida and parts of Georgia, Alabama, and South Carolina: U.S. Geological Survey Data Series 926, 24 p., https://dx.doi.org/10.3133/ds926.  
+  
+
+### Texas Gulf Coast Aquifer System 
+  
+  Data source: Texas Water Development Board    
+  Projection: ALbers Conical Equal Area   
+  Datum: North American Datum of 1983   
+  Type: Raster   
+  Year Published: 2013  
+  
+  Date downloaded: 1/12/2022   
+  URL: https://www.twdb.texas.gov/groundwater/models/download.asp  
+  Webpage title:  Groundwater Availability Model (GAM) and Geodatabase Downloads   
+  Model: Gulf Coast Aquifer (northern portion) GAM, "Data" folder   
+  
+  Metadata page: https://www.twdb.texas.gov/groundwater/models/gam/glfc_n/glfc_n.asp  
+  Webpage title: Northern portion of the Gulf Coast Aquifer System   
+  Reports to reference:   
+  - "USGS Houston Area Groundwater Model (Version 1.1)" | USGS SIR 2012-5154  
+  - "Hydrogeology and Simulation of Ground-Water Flow and Land-Surface Subsidence in the Northern Part of the Gulf Coast Aquifer         System, Texas" | USGS SIR 2004-5102   
+  
+  
+  
+  
+  
