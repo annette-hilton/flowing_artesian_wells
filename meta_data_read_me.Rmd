@@ -40,53 +40,6 @@ The purpose of this project is to compare groundwater movement (vertical hydraul
 2) Mendenhall et al., 1916 (https://www.sciencebase.gov/catalog/item/58923e21e4b072a7ac143c11)
 
 3) USGS Groundwater Wells (See Rproject 'usa_groundwater_data' by Hilton for more details)
-
-
-#### Early 1900s Groundwater Data Cleaning & Compilation 
-
-Data Search
-
-- USGS Publications Warehouse: https://pubs.er.usgs.gov/search?q=tennessee&year=
-- Major aquifer systems in US targeted: Mississippi Embayment, Central Valley, High Plains 
-  - Search by state, category year published, download as CSV and sort publications per state by year (earliest year first) 
-  - Papers that contain table data of groundwater wells (not ancedotal in text) before 1907 were considered 
-
-Data Compilation/Digitization 
-
-- 5 early USGS publications were identified and assigned to student employees to digitize 
-  - Darton, 1905
-  - Fuller, 1905
-  - Fuller, 1906
-  - Crider & Johnson, 1906
-  - Veatch, 1906 
-- Data digitized and then checked twice by employee; final check conducted by second individual (Annette Hilton) 
-
-Data Cleaning 
-
-- All 5 documents were merged into one large dataset, keeping important information that is consistent across documents 
-  - id 
-  - county 
-  - city 
-  - specific_location 
-  - township
-  - range
-  - section
-  - latitude
-  - longitude 
-  - min_depth_ft 
-  - max_depth_ft 
-  - depth_sign 
-  - depth_text 
-  - min_height_water_ft
-  - max_height_water_ft
-  - height_water_text
-  - remarks 
-  - citation 
-  
-- No document originally included a lat/long: lat-long was calculated by: 
-  - Geocode by Awesome Table Add-On in Google Sheets (where city, state was available)
-  - Township, section, range only available--plotted in ArcGIS, lat/long taken from center of TRS
-  - For wells where more "specific location" were available, lat/long offset calculated 
   
 ### Modern Groundwater Data 
   
@@ -248,6 +201,52 @@ Additional data sources:
   - "Hydrogeology and Simulation of Ground-Water Flow and Land-Surface Subsidence in the Northern Part of the Gulf Coast Aquifer         System, Texas" | USGS SIR 2004-5102   
   
   
+## Data Cleaning 
+
+### Early 1900s Groundwater Data Cleaning & Compilation 
+
+Data Search
+
+- USGS Publications Warehouse: https://pubs.er.usgs.gov/search?q=tennessee&year=
+- Major aquifer systems in US targeted: Mississippi Embayment, Central Valley, High Plains 
+  - Search by state, category year published, download as CSV and sort publications per state by year (earliest year first) 
+  - Papers that contain table data of groundwater wells (not ancedotal in text) before 1907 were considered 
+
+Data Compilation/Digitization 
+
+- 5 early USGS publications were identified and assigned to student employees to digitize 
+  - Darton, 1905
+  - Fuller, 1905
+  - Fuller, 1906
+  - Crider & Johnson, 1906
+  - Veatch, 1906 
+- Data digitized and then checked twice by employee; final check conducted by second individual (Annette Hilton) 
+
+Data Cleaning 
+
+- All 5 documents were merged into one large dataset, keeping important information that is consistent across documents 
+  - id 
+  - county 
+  - city 
+  - specific_location 
+  - township
+  - range
+  - section
+  - latitude
+  - longitude 
+  - min_depth_ft 
+  - max_depth_ft 
+  - depth_sign 
+  - depth_text 
+  - min_height_water_ft
+  - max_height_water_ft
+  - height_water_text
+  - remarks 
+  - citation 
   
+- No document originally included a lat/long: lat-long was calculated by: 
+  - Geocode by Awesome Table Add-On in Google Sheets (where city, state was available)
+  - Township, section, range only available--plotted in ArcGIS, lat/long taken from center of TRS
+  - For wells where more "specific location" were available, lat/long offset calculated  
   
   
