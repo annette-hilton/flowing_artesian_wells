@@ -82,7 +82,7 @@ Just South Dakota
 
 ```{r}
 usgs_sd <- entire_usa_gw %>% 
-  filter(state == "southdakota") %>% 
+  filter(id.x == "sd") %>% 
   filter(!well_depth_va == "NA") %>% 
   filter(!well_depth_va == 0.00) %>% 
   filter(!lev_dt == "NA") %>%
@@ -90,7 +90,7 @@ usgs_sd <- entire_usa_gw %>%
 
 usgs_sd$site_no <- sub("^", "w", usgs_sd$site_no)
 
-write_tsv(usgs_sd, here::here("output_data", "usgs_sd.txt"))
+write_tsv(usgs_sd, here::here("output_data", "sd", "usgs_sd.txt"))
   
 
 usgs_modern_med_sd <- usgs_sd %>% 
@@ -99,6 +99,6 @@ usgs_modern_med_sd <- usgs_sd %>%
   distinct(site_no, .keep_all = TRUE) %>% 
   mutate(artesian = ifelse(median <= 0, 1, 0))
 
-write_tsv(usgs_modern_med_sd, here::here("output_data", "usgs_modern_sd.txt"))
+write_tsv(usgs_modern_med_sd, here::here("output_data", "sd", "usgs_modern_sd.txt"))
 ```
 

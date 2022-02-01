@@ -11,6 +11,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # South Dakota Modern Analysis 
 
+This Rmd compiles modern groundwater data from South Dakota. 
+South Dakota USGS data are sparse, necessary to pull in South Dakota drilling wells and observation monitoring wells from the South Dakota Department of Agriculture and Natural Resources. 
+
 ## Attach Packages
 
 ```{r}
@@ -162,6 +165,18 @@ sd_obs_join <- sd_full_med %>%
 
 ```
 
+
+For data check of raster Dakota formation --only wells screened in Dakota aquifer 
+01/31/22
+
+```{r}
+sd_dakota <- sd_obs_join %>% 
+  select(id, lat, long, aquifer, depth) %>% 
+  filter(aquifer == "DKOT")
+
+write_tsv(sd_dakota, here::here("output_data", "sd", "sd_dakota_test.txt"))
+```
+
 ## Read in Data 
 
 ### USGS 
@@ -170,7 +185,7 @@ Pos = below land surface
 Neg = artesian 
 
 ```{r}
-sd_usgs <- read_tsv(here::here("output_data", "usgs_modern_sd.txt"))
+sd_usgs <- read_tsv(here::here("output_data", "sd", "usgs_modern_sd.txt"))
 
 ```
 
@@ -211,7 +226,7 @@ sd_full <- rbind(sd_obs_join, sd_drill_join, sd_usgs_join)
 Write for ArcGIS 
 
 ```{r}
-write_tsv(sd_full, here::here("output_data", "sd_full_modern.txt"))
+write_tsv(sd_full, here::here("output_data", "sd", "sd_full_modern.txt"))
 ```
 
 
