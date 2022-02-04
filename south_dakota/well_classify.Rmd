@@ -1,5 +1,5 @@
 ---
-title: "CV Project--Well Classification"
+title: "South Dakota Project--Well Classification"
 author: "Annette Hilton"
 date: "02/01/2022"
 output: html_document
@@ -38,26 +38,6 @@ library(naniar)
 # Disable scientific notation 
 
 options(scipen=999)
-```
-
-```{r}
-# Modern data 
-# Read in modern USGS data w/ DEM 
-dem_usgs_modern <- readr::read_csv(here::here("data", "dem", "dem_usgs_modern.csv")) 
-
-# Read in modern USGS data full file (from Rmd `modern_data_cleaning.Rmd`)
-usgs_modern <- readr::read_tsv(here::here("output_data", "usgs_modern.txt"))
-
-```
-
-### Join DEM files with full data files 
-
-```{r}
-# Join modern 
-
-modern_join <- usgs_modern %>% 
-  full_join(dem_usgs_modern, by = "site_no")
-
 ```
 
 ## Data Analysis (Pre-Arc)

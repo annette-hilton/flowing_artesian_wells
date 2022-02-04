@@ -47,6 +47,10 @@ options(scipen=999)
   c. USGS data for South Dakota 
 2. Tidy data 
 3. Prepare for Arc 
+4. ArcPRO
+  a. Extract multi values to points for all modern wells in SD with DEM raster 
+  b. Extract multi values to points for all modern wells with our Dakota raster layer(s) 
+  c. Exract multi values to points for all historical wells with our Dakota raster layer(s)
 
 ## Read in Data
 
@@ -163,19 +167,13 @@ sd_obs_join <- sd_full_med %>%
          depth = total_depth) %>% 
   select(id, lat, long, aquifer, elevation, original_date, date, year, depth, median_level, artesian)
 
+# Write file for checking our raster layers of the Dakota formation 
+# See Rmd file 
+
+write_tsv(sd_obs_join, here::here("output_data", "sd", "sd_dakota_rastercheck.txt"))
+
 ```
 
-
-For data check of raster Dakota formation --only wells screened in Dakota aquifer 
-01/31/22
-
-```{r}
-sd_dakota <- sd_obs_join %>% 
-  select(id, lat, long, aquifer, depth) %>% 
-  filter(aquifer == "DKOT")
-
-write_tsv(sd_dakota, here::here("output_data", "sd", "sd_dakota_test.txt"))
-```
 
 ## Read in Data 
 

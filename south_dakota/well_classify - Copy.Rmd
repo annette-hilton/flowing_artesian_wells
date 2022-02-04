@@ -1,0 +1,143 @@
+---
+title: "Test of Dakota Formation "
+author: "Annette Hilton"
+date: "02/02/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error = FALSE)
+```
+
+# Introduction
+
+This project is an examination of early 1900s (~1890-1906) groundwater conditions in the Dakota Aquifer (South Dakota) as compared to present day (2010-2021).
+
+The purpose of this Rmd is to: 
+
+Test our calculation of the Dakota formation. 
+  
+
+## Attach Packages and Data 
+
+```{r}
+# Attach packages 
+
+library(plyr) # Be sure to load `plyr()` first, otherwise other functions in tidyverse break! 
+library(tidyverse)
+library(here)
+library(janitor)
+library(naniar)
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+### Read in Data from Rmd `sd_modern_data_cleaning.Rmd` 
+
+South Dakota observation wells with aquifer notation 
+
+```{r}
+sd_dakota_rastercheck <- readr::read_tsv(here::here("output_data", "sd", "sd_dakota_rastercheck.txt"))
+
+```
+
+Select only wells screened in Dakota aquifer 
+
+```{r}
+# Dakota aquifer code: "DKOT" 
+
+sd_dakota <- sd_dakota_rastercheck %>% 
+  select(id, lat, long, aquifer, depth) %>% 
+  filter(aquifer == "DKOT")
+
+write_tsv(sd_dakota, here::here("output_data", "sd", "sd_dakota_test.txt"))
+```
+
+### Process in ArcPRO 
+
+1. "Extract multi values to points" tool to intersect the Dakota formation observation wells with DEM 
+2. "Extract multi values to points" tool to intersect the Dakota formation wells with our versions of the top, top without Black Hills, and bottom layers of the Dakota formation 
+3. Export table 
+
+```{r}
+# Read in processed file from ArcPro 
+
+# IDW with entire top (including black hills), bottom, and top without black hills 
+
+sd_dakota_rasterprocessed <- readr::read_csv(here::here("data", "south_dakota", "sd_wells_dakota_intersect.txt"))
+
+#NNDW with top without black hills and bottom 
+
+sd_dakota_natural <- readr::read_csv(here::here("data", "south_dakota", "test_dakota_natural.txt"))
+```
+
+```{r}
+#IDW 
+# True depth (elevation - well depth) 
+
+test_depth <- sd_dakota_natural %>% 
+  mutate(true_depth = topo_ft - depth)
+
+# Between our layers of the Dakota formation? 
+
+test_dakota_formation <- test_depth %>% 
+  rowwise() %>% 
+  mutate(dakota = ifelse(true_depth <= top_dak & true_depth >= bottom_dak, "full_dak", 
+         ifelse(true_depth <= without_blackhills & true_depth >=bottom_dak, "full_dak_bh", 
+                ifelse(true_depth<= without_blackhills, "top_only", NA)))) %>% 
+    mutate(dakota_nat = ifelse(true_depth <= Natural_top_7 & true_depth >= Natural_bottom, "full_dak", 
+                ifelse(true_depth<= Natural_top_7, "top_only", NA)))
+
+
+# Summary 
+
+summary <- test_dakota_formation %>% 
+  group_by(dakota, dakota_nat) %>% 
+  count(dakota, dakota_nat)
+```
+
+
+```{r}
+# NATURAL NEIGHBOR 
+# True depth (elevation - well depth) 
+
+test_depth_nn <- sd_dakota_natural %>% 
+  mutate(true_depth = topo_ft - depth)
+
+# Between our layers of the Dakota formation? 
+
+test_dakota_formation_nn <- test_depth_nn %>% 
+  rowwise() %>% 
+  mutate(dakota = ifelse(true_depth <= Natural_top_7 & true_depth >= Natural_bottom, "full_dak", 
+                ifelse(true_depth < Natural_top_7, "top_only", 
+                       ifelse(true_depth < Natural_top_7 & is.na(Natural_bottom), "top_nobottom", NA))))
+
+
+test_dakota_form_case <- test_depth %>% 
+  rowwise() %>% 
+  mutate(dakota = case_when(true_depth <= top_dak & true_depth >= bottom_dak ~"full_dak",
+                            true_depth <= without_blackhills & true_depth >= bottom_dak ~"full_dak_bh", 
+                            true_depth <= without_blackhills ~"top_only"))
+
+# Summary 
+
+summary <- test_dakota_form_case %>% 
+  group_by(dakota) %>% 
+  count(dakota)
+
+# Case when test 
+
+test_dakota_form_nn_case <- test_depth_nn %>% 
+  rowwise() %>% 
+  mutate(dakota = case_when(true_depth <= Natural_top_7 & true_depth >= Natural_bottom ~"full_dak",
+                            true_depth <= Natural_top_7 ~"top_only"))
+
+
+# Summary 
+
+summary_nn <- test_dakota_form_nn_case %>% 
+  group_by(dakota) %>% 
+  count(dakota)
+```
