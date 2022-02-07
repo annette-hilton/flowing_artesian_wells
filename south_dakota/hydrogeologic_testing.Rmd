@@ -1,5 +1,5 @@
 ---
-title: "Test of Dakota Formation "
+title: "Test of Dakota Formation"
 author: "Annette Hilton"
 date: "02/02/2022"
 output: html_document
@@ -16,6 +16,17 @@ This project is an examination of early 1900s (~1890-1906) groundwater condition
 The purpose of this Rmd is to: 
 
 Test our calculation of the Dakota formation. 
+
+Methods: 
+
+1. We compiled lithological logs from the South Dakota Driller Database and selected well logs which referenced "Dakota" in them. 
+2. Hand examined each lithological log for the top and bottom reported of the Dakota formation 
+3. Other information was also compiled, such as the formation reported below the Dakota 
+4. Plotted wells that reference the Dakota formation in ArcPro (lat/long)
+5. Using NNIDW (Natural Neighbor Inverse Distance Weighted), created a raster layer of the Dakota formation 
+  - Top layer (top of the Dakota) 
+  - Bottom layer (bottom of the Dakota) 
+  
   
 
 ## Attach Packages and Data 
@@ -34,9 +45,11 @@ library(naniar)
 options(scipen=999)
 ```
 
+## Testing known Dakota wells with our raster layers of the Dakota formation 
+
 ### Read in Data from Rmd `sd_modern_data_cleaning.Rmd` 
 
-South Dakota observation wells with aquifer notation 
+South Dakota observation wells with aquifer notation (known wells screened in the Dakota formation; not used in our lithological log raster compilation) 
 
 ```{r}
 sd_dakota_rastercheck <- readr::read_tsv(here::here("output_data", "sd", "sd_dakota_rastercheck.txt"))
@@ -56,6 +69,8 @@ write_tsv(sd_dakota, here::here("output_data", "sd", "sd_dakota_test.txt"))
 ```
 
 ### Process in ArcPRO 
+
+*Note:* Both IDW and NNIDW were tested. NNIDW was ultimately selected for final analyses. 
 
 1. "Extract multi values to points" tool to intersect the Dakota formation observation wells with DEM 
 2. "Extract multi values to points" tool to intersect the Dakota formation wells with our versions of the top, top without Black Hills, and bottom layers of the Dakota formation 
