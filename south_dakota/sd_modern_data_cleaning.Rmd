@@ -215,7 +215,7 @@ sd_usgs_join$depth <- as.character(sd_usgs_join$depth)
 
 ```
 
-Join both dataframes 
+Join all dataframes (monitoring wells, drilling wells, USGS)
 
 ```{r}
 sd_full <- rbind(sd_obs_join, sd_drill_join, sd_usgs_join)
@@ -225,6 +225,22 @@ Write for ArcGIS
 
 ```{r}
 write_tsv(sd_full, here::here("output_data", "sd", "sd_full_modern.txt"))
+```
+
+Join ONLY USGS and monitoring well dataframes 
+
+```{r}
+sd_full_usgsmon <- rbind(sd_obs_join, sd_usgs_join)
+
+# Pull vector of ID 
+
+sd_usgsmod_only <- pull(sd_full_usgsmon$id)
+```
+
+Write for ArcGIS 
+
+```{r}
+write_tsv(sd_full_usgsmon, here::here("output_data", "sd", "sd_usgsmon_modern.txt"))
 ```
 
 

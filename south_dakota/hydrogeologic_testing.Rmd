@@ -26,6 +26,7 @@ Methods:
 5. Using NNIDW (Natural Neighbor Inverse Distance Weighted), created a raster layer of the Dakota formation 
   - Top layer (top of the Dakota) 
   - Bottom layer (bottom of the Dakota) 
+6. Our layers of the Dakota formation are checked (below) against known wells to fall within Dakota formation from the SD Monitoring wells 
   
   
 

@@ -1,7 +1,7 @@
 ---
 title: "South Dakota Project--Well Classification"
 author: "Annette Hilton"
-date: "02/01/2022"
+date: "02/17/2022"
 output: html_document
 ---
 
@@ -46,7 +46,7 @@ Hydrogeological data:
 Arcfile = "cv" 
 
 1. Hydrogeologic layers (top and bottom) of Dakota aquifer (as created by us; lithological logs) 
-2. Modern wells from SD (combination of drilling wells, observation wells, and USGS wells) (processed in Rmd `sd_modern_data_cleaning.Rmd`) and early 1900s data (early1900s_dem_wgs84_final.txt)
+2. Modern wells from SD (combination observation wells and USGS wells) (processed in Rmd `sd_modern_data_cleaning.Rmd`) and early 1900s data (early1900s_dem_wgs84_final.txt)
 3. Use tool "Extract multi values to points" to determine well location intersection with geological raster layers
 4. Export resulting well data as a text files
 
@@ -242,7 +242,7 @@ Dakota Top Only
 
 Dakota 1900 to 2010-2020 
 
-Modern n = 173
+Modern n = 64
 1900s n = 175
 
 ```{r}
@@ -250,9 +250,17 @@ Modern n = 173
 modern_sd <- sd_class_mod %>% 
   filter(aquifer == "dakota") 
 
+# Join with file that separates drilling wells out (only keeps monitoring wells and USGS wells)
+# Read in file (from `sd_modern_data_cleaning.Rmd`)
+sd_usgsmon_mod <- readr::read_tsv(here::here("output_data", "sd", "sd_usgsmon_modern.txt"))
+
+# Join files 
+modern_sd_joined <- sd_usgsmon_mod %>% 
+  inner_join(modern_sd, by = "id", all = FALSE)
+
 # write file for arc 
 
-write_tsv(modern_sd, here::here("output_data", "sd", "modern_sd.txt"))
+write_tsv(modern_sd_joined, here::here("output_data", "sd", "modern_sd_limited.txt"))
 
 # 1900s 
 historical_sd <- sd_class_1900 %>% 
@@ -269,7 +277,7 @@ Dakota Top and Bottom
 
 Dakota 1900 to 2010-2020 
 
-Modern n = 66
+Modern n = 31
 1900s n = 64
 
 ```{r}
@@ -277,9 +285,13 @@ Modern n = 66
 modern_sd_tb <- sd_class_mod_tb %>% 
   filter(aquifer == "dakota") 
 
+# Join files 
+modern_sd_joined_tb <- sd_usgsmon_mod %>% 
+  inner_join(modern_sd_tb, by = "id", all = FALSE)
+
 # write file for arc 
 
-write_tsv(modern_sd_tb, here::here("output_data", "sd", "modern_sd_tb.txt"))
+write_tsv(modern_sd_joined_tb, here::here("output_data", "sd", "modern_sd_tb_limited.txt"))
 
 # 1900s 
 historical_sd_tb <- sd_class_1900_tb %>% 

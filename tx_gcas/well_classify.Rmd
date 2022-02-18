@@ -397,7 +397,6 @@ Modern n = 87
 1900s n = 1137
 
 ```{r}
-# Separate UF units 
 
 # Modern 
 modern_txgcas <- txgcas_class_mod %>% 

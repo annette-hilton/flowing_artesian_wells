@@ -52,6 +52,8 @@ Includes:
 - North Atlantic Coastal Plain 
 - Floridan Aquifer System 
 - Texas Gulf Coast Aquifer System  
+- Columbia Plateau Regional Aquifer System 
+- Dakota Aquifer 
 
 Data source: United States Geological Survey   
 Datum: North American Datum 1983  
@@ -74,17 +76,21 @@ Additional data sources:
   - Datum: WGS84 
   - Type: Table 
   
+- Dakota Aquifer (South Dakota) 
+
 
 ## 2. Digital Elevation Model (DEM) 
 
 
 ## 3. Hydrogeologic data 
   
-  Central Valley Aquifer  
-  Mississippi Embayment Aquifer System   
-  North Atlantic Coastal Plain   
-  Floridan Aquifer System   
-  Texas Gulf Coast Aquifer System   
+- Central Valley Aquifer  
+- Mississippi Embayment Aquifer System   
+- North Atlantic Coastal Plain   
+- Floridan Aquifer System   
+- Texas Gulf Coast Aquifer System   
+- Columbia Plateau Regional Aquifer System 
+- Dakota Aquifer 
   
 
 ### Central Valley Aquifer 
@@ -184,7 +190,7 @@ Additional data sources:
 ### Texas Gulf Coast Aquifer System 
   
   Data source: Texas Water Development Board    
-  Projection: ALbers Conical Equal Area   
+  Projection: Albers Conical Equal Area   
   Datum: North American Datum of 1983   
   Type: Raster   
   Year Published: 2013  
@@ -200,6 +206,41 @@ Additional data sources:
   - "USGS Houston Area Groundwater Model (Version 1.1)" | USGS SIR 2012-5154  
   - "Hydrogeology and Simulation of Ground-Water Flow and Land-Surface Subsidence in the Northern Part of the Gulf Coast Aquifer         System, Texas" | USGS SIR 2004-5102   
   
+  
+### Columbia Plateau Aquifer System 
+  
+  Data source: United States Geological Survey   
+  Projection: Albers Conical Equal Area   
+  Datum: North American Datum of 1983   
+  Type: Raster   
+  Year Published: 2011 
+  
+  Date downloaded: 2/16/2022   
+  URL: https://pubs.usgs.gov/sir/2010/5246/ 
+  Webpage title:  Three-Dimensional Model of the Geologic Framework for the Columbia Plateau Regional Aquifer System, Idaho, Oregon, and Washington
+  
+  Metadata page: https://pubs.usgs.gov/sir/2010/5246/ 
+  Webpage title:  Three-Dimensional Model of the Geologic Framework for the Columbia Plateau Regional Aquifer System, Idaho, Oregon, and Washington 
+  Reports to reference:   
+  - "Three-Dimensional Model of the Geologic Framework for the Columbia Plateau Regional Aquifer System, Idaho, Oregon, and Washington" | USGS SIR 2010-5246  
+  
+### Dakota Aquifer: South Dakota  
+  
+  Data source: L   
+  Projection: Albers Conical Equal Area   
+  Datum: North American Datum of 1983   
+  Type: Raster   
+  Year Published:  
+  
+  Date downloaded: 1/12/2022   
+  URL: https://www.twdb.texas.gov/groundwater/models/download.asp  
+  Webpage title:  Groundwater Availability Model (GAM) and Geodatabase Downloads   
+  Model: Gulf Coast Aquifer (northern portion) GAM, "Data" folder   
+  
+  Metadata page: 
+  Webpage title:   
+  Reports to reference:   
+  - 
   
 ## Data Cleaning 
 
