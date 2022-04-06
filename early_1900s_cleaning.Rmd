@@ -196,6 +196,7 @@ early_usgs_med$id <- sub("^", "w", early_usgs_med$id)
 4. Import DEM file, merge with original 1900s dataframe 
 5. Write file for analyses in `well_classify.Rmd` 
 
+
 1. Join data frames (id, lat, long, well depth, water level) 
 ```{r}
 # Join data frames 
@@ -231,13 +232,15 @@ early1900s_arc <- early1900s_all %>%
 2. Write for ArcGIS DEM processing 
 
 ```{r}
-# 2. 
 # Write now-cleaned data as text file for ArcGIS
 
 write_tsv(early1900s_arc, here::here("output_data", "early1900s_arc.txt"))
 ```
 
 3. (Separately) process in ArcGIS for DEM values
+
+- On external hard drive, "look busy" 
+- `me project` 
 
 4. Import DEM file, merge with original 1900s dataframe 
 
@@ -247,42 +250,31 @@ write_tsv(early1900s_arc, here::here("output_data", "early1900s_arc.txt"))
 early1900s_dem <- readr::read_csv(here::here("data", "dem", "early1900s_dem_wgs84_final.txt"))
 
 # Tidy DEM file 
+# Keep only the ID and the DEM value 
+# Remove any duplicates (duplicates generated in ArcGIS process) 
 
 early1900s_dem_tidy <- early1900s_dem %>% 
   select(id, ned10m_bilinear_cusa_albers102003) %>% 
-  filter(!is.na(ned10m_bilinear_cusa_albers102003))
+  distinct(id, .keep_all = TRUE)
+
+# Remove duplicates from metadata file (duplicates somehow generated in the ArcGIS process) 
+
+early1900s_arc_tidy <- early1900s_arc %>% 
+  distinct(id, .keep_all = TRUE)
 
 # Join with metadata file/full 1900s file 
 
 early1900s_final <- early1900s_dem_tidy %>% 
-  full_join(early1900s_arc, by = "id") 
+  full_join(early1900s_arc_tidy, by = "id") 
 
-
-duplicated(early1900s_arc)
-sum(duplicated(early1900s_arc))
-
-duplicated(early1900s_dem_tidy)
-sum(duplicated(early1900s_dem_tidy))
-
-test_distinct <- early1900s_dem_tidy %>% 
-  distinct(id, .keep_all = TRUE)
-
-test_distinct_2 <- early1900s_arc %>% 
-  distinct(id, .keep_all = TRUE)
-
-%>% 
-  filter(!is.na(ned10m_bilinear_cusa_albers102003)) %>%    
-  filter(!is.na(artesian)) %>% 
-  filter(!is.na(well_depth_ft))
-
-test <- test_distinct_2 %>% 
-  dplyr::inner_join(test_distinct, by = "id")
-
-test_left <- test_distinct_2 %>% 
-  dplyr::left_join(test_distinct, by = "id")
-
-test_right <- test_distinct_2 %>% 
-  dplyr::right_join(test_distinct, by = "id")
 ```
 
+
+5. Write file for analysis in `well_classify.Rmd` 
+
+```{r}
+# Write final 1900s file, includes DEM and original data 
+
+write_tsv(early1900s_final, here::here("data", "early1900s_final.txt"))
+```
 

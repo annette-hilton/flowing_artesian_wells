@@ -16,18 +16,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # Attach packages 
 
-library(parzer)
-library(Rcpp)
 library(tidyverse)
 library(here)
 library(janitor)
 library(purrr)
-library(broom)
-library(tibble)
 library(dplyr)
 library(tidyr)
-library(ggpubr)
-library(data.table)
 
 
 # Disable scientific notation 
@@ -35,15 +29,15 @@ library(data.table)
 options(scipen=999)
 ```
 
-# Read in Data
+### Read in Data
 
 ```{r}
 # Read in the full dataset for all well water measurements for the USA 
 
-entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usa_2021.txt"))
+entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usa_2022.txt"))
 ```
 
-# Tidy Data 
+### Tidy Data 
 
 - Remove wells without well depth 
 - Remove wells with zero depth 
@@ -75,30 +69,113 @@ usgs_modern_med$site_no <- sub("^", "w", usgs_modern_med$site_no)
 
 write_tsv(usgs_modern_med, here::here("output_data", "usgs_modern.txt"))
 ```
- 
-------------------------------------------------------------------------------------
-Just South Dakota 
 
+### Merge with DEM file 
 
 ```{r}
-usgs_sd <- entire_usa_gw %>% 
-  filter(id.x == "sd") %>% 
-  filter(!well_depth_va == "NA") %>% 
-  filter(!well_depth_va == 0.00) %>% 
-  filter(!lev_dt == "NA") %>%
-  filter(!is.na(lev_va)) 
+# Modern data 
+# Read in modern USGS data w/ DEM 
+dem_usgs_modern <- readr::read_csv(here::here("data", "dem", "dem_usgs_modern.csv"))
 
-usgs_sd$site_no <- sub("^", "w", usgs_sd$site_no)
+```
 
-write_tsv(usgs_sd, here::here("output_data", "sd", "usgs_sd.txt"))
-  
+```{r}
+# Join files for full data 
 
-usgs_modern_med_sd <- usgs_sd %>% 
-  group_by(site_no) %>% 
-  mutate(median = median(lev_va)) %>% 
-  distinct(site_no, .keep_all = TRUE) %>% 
-  mutate(artesian = ifelse(median <= 0, 1, 0))
+modern_final <- usgs_modern_med %>% 
+  full_join(dem_usgs_modern, by = "site_no")
 
-write_tsv(usgs_modern_med_sd, here::here("output_data", "sd", "usgs_modern_sd.txt"))
+```
+
+
+# Individual Aquifer Systems 
+
+### Mississippi Embayment 
+
+```{r}
+# Missouri, Illinois, Kentucky, Tennessee, Arkansas, Mississippi, Alabama, Louisiana
+
+me_modern <- modern_final %>% 
+  filter(id.x %in% c("al", "ar", "il", "ky", "la", "ms", "mo", "tn"))
+
+write_tsv(me_modern, here::here("data", "me", "me_modern.txt"))
+```
+
+### North Atlantic Coastal Plain 
+
+```{r}
+# New York, New Jersey, Delaware, Maryland, Virginia, North Carolina 
+
+nacp_modern <- modern_final %>% 
+  filter(id.x %in% c("ny", "nj", "de", "md", "va", "nc")) 
+
+write_tsv(nacp_modern, here::here("data", "nacp", "nacp_modern.txt"))
+```
+
+### Central Valley (California) 
+### Floridan Aquifer System 
+
+```{r}
+# Florida, Georgia, South Carolina, Alabama
+
+fl_modern <- modern_final %>% 
+   filter(id.x %in% c("al", "fl", "ga", "sc")) 
+
+write_tsv(fl_modern, here::here("data", "fl", "fl_modern.txt"))
+```
+
+### Texas Gulf Coast Aquifer System (Texas)
+
+```{r}
+# Texas
+
+tx_modern <- modern_final %>% 
+   filter(id.x == "tx") 
+
+write_tsv(tx_modern, here::here("data", "tx", "tx_modern.txt"))
+```
+
+### Columbia Plateau (Washington State)
+
+```{r}
+# Washington State 
+
+columbia_modern <- modern_final %>% 
+   filter(id.x == "wa") 
+
+write_tsv(columbia_modern, here::here("data", "columbia", "columbia_modern.txt"))
+```
+
+### Roswell Artesian Basin (New Mexico) 
+
+```{r}
+# New Mexico 
+
+roswell_modern <- modern_final %>% 
+   filter(id.x == "nm") 
+
+write_tsv(roswell_modern, here::here("data", "roswell", "roswell_modern.txt"))
+```
+
+### Dakota Aquifer (South Dakota) 
+
+```{r}
+# usgs_sd <- entire_usa_gw %>% 
+#   filter(id.x == "sd") %>% 
+#   filter(!well_depth_va == "NA") %>% 
+#   filter(!well_depth_va == 0.00) %>% 
+#   filter(!lev_dt == "NA") %>%
+#   filter(!is.na(lev_va)) 
+# 
+# usgs_sd$site_no <- sub("^", "w", usgs_sd$site_no)
+# 
+# write_tsv(usgs_sd, here::here("output_data", "sd", "usgs_sd.txt"))
+# write_tsv(usgs_modern_med_sd, here::here("output_data", "sd", "usgs_modern_sd.txt"))
+
+usgs_modern_med_sd <- modern_final %>% 
+  filter(id.x == "sd")
+
+write_tsv(usgs_modern_med_sd, here::here("data", "south_dakota", "usgs_modern_sd.txt"))
+
 ```
 
