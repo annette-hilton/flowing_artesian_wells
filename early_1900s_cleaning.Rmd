@@ -16,18 +16,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # Attach packages 
 
-library(parzer)
-library(Rcpp)
 library(tidyverse)
 library(here)
 library(janitor)
-library(purrr)
-library(broom)
-library(tibble)
 library(dplyr)
-library(tidyr)
-library(ggpubr)
-library(data.table)
 
 
 # Disable scientific notation 
@@ -104,7 +96,7 @@ mendenhall_raw <- readr::read_csv(here::here("data", "1900s", "MENDENHALL_DATA (
 ```{r}
 # Read in the full dataset for all well water measurements for the USA 
 
-entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usa_2021.txt")) 
+entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usa_2022.txt")) 
 
 ```
 
@@ -113,7 +105,7 @@ entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usa_2021.txt"))
 
 - Lowercase/clean names
 - Remove extra blank columns 
-- Remove values without well depth value/depth is zero & no static water level 
+- Remove values without well depth value/depth is zero  
 - Remove values without a lat/long 
 - Rename columns to be consistent with other data frames 
 - Add artesian conditions/columns 
@@ -166,7 +158,7 @@ mendenhall_tidy$id <- sub("^", "w", mendenhall_tidy$id)
 
 ### 3-- USGS Groundwater Wells 
 
-(Guess that negative number indicates artesian condition--emailed USGS to be sure: correct, neg = artesian, pos = below land surface)
+(USGS email correspondence indicate: neg = artesian, pos = below land surface)
 
 ```{r}
 # Entire USGS groundwater well data until fall 2019 (last updated) 
@@ -199,10 +191,12 @@ early_usgs_med$id <- sub("^", "w", early_usgs_med$id)
 # Prepare for Analysis 
 
 1. Join data frames (id, lat, long, well depth, water level) 
-2. Find deep wells (100 m/328 ft or greater)
-3. Find deep wells that are also artesian 
-4. Export to ArcGIS 
+2. Write for ArcGIS DEM processing 
+3. (Separately) process in ArcGIS for DEM values 
+4. Import DEM file, merge with original 1900s dataframe 
+5. Write file for analyses in `well_classify.Rmd` 
 
+1. Join data frames (id, lat, long, well depth, water level) 
 ```{r}
 # Join data frames 
 # First tidy for join 
@@ -229,16 +223,66 @@ early1900s_all <- rbind(join_jl, join_mendenhall, join_usgs)
 # Remove data without artesian indication 
 
 early1900s_arc <- early1900s_all %>% 
-  filter(!is.na(artesian)) 
+  filter(!is.na(artesian)) %>% 
+  filter(!is.na(well_depth_ft))
   
 ```
 
-
-Write as tsv for ArcGIS 
+2. Write for ArcGIS DEM processing 
 
 ```{r}
+# 2. 
 # Write now-cleaned data as text file for ArcGIS
 
 write_tsv(early1900s_arc, here::here("output_data", "early1900s_arc.txt"))
 ```
+
+3. (Separately) process in ArcGIS for DEM values
+
+4. Import DEM file, merge with original 1900s dataframe 
+
+```{r}
+# DEM early 1900s 
+
+early1900s_dem <- readr::read_csv(here::here("data", "dem", "early1900s_dem_wgs84_final.txt"))
+
+# Tidy DEM file 
+
+early1900s_dem_tidy <- early1900s_dem %>% 
+  select(id, ned10m_bilinear_cusa_albers102003) %>% 
+  filter(!is.na(ned10m_bilinear_cusa_albers102003))
+
+# Join with metadata file/full 1900s file 
+
+early1900s_final <- early1900s_dem_tidy %>% 
+  full_join(early1900s_arc, by = "id") 
+
+
+duplicated(early1900s_arc)
+sum(duplicated(early1900s_arc))
+
+duplicated(early1900s_dem_tidy)
+sum(duplicated(early1900s_dem_tidy))
+
+test_distinct <- early1900s_dem_tidy %>% 
+  distinct(id, .keep_all = TRUE)
+
+test_distinct_2 <- early1900s_arc %>% 
+  distinct(id, .keep_all = TRUE)
+
+%>% 
+  filter(!is.na(ned10m_bilinear_cusa_albers102003)) %>%    
+  filter(!is.na(artesian)) %>% 
+  filter(!is.na(well_depth_ft))
+
+test <- test_distinct_2 %>% 
+  dplyr::inner_join(test_distinct, by = "id")
+
+test_left <- test_distinct_2 %>% 
+  dplyr::left_join(test_distinct, by = "id")
+
+test_right <- test_distinct_2 %>% 
+  dplyr::right_join(test_distinct, by = "id")
+```
+
 

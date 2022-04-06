@@ -81,6 +81,7 @@ Additional data sources:
 
 ## 2. Digital Elevation Model (DEM) 
 
+On external hard-drive "look busy" 
 
 ## 3. Hydrogeologic data 
   
@@ -210,7 +211,7 @@ Additional data sources:
 ### Columbia Plateau Aquifer System 
   
   Data source: United States Geological Survey   
-  Projection: Albers Conical Equal Area   
+  Projection: Lambert Conformal Conic   
   Datum: North American Datum of 1983   
   Type: Raster   
   Year Published: 2011 
@@ -226,21 +227,34 @@ Additional data sources:
   
 ### Dakota Aquifer: South Dakota  
   
-  Data source: L   
-  Projection: Albers Conical Equal Area   
+  Data source: Jasechko Lab, hand compiled from South Dakota Department of Natural Resources Lithologic Logs Database    
+  Projection:    
+  Datum: WGS 1984  
+  Type: Raster   
+  Year Published: Various lithological logs 
+  
+  Date downloaded: 11/27/2021   
+  URL: http://cf.sddenr.net/lithdb/
+  Webpage title: Lithologic Logs Database   
+  Model: NA
+  
+### Roswell Artesian Basin 
+
+  Data source: New Mexico Bureau of Geology and Mineral Resources 
+  Projection: Transverse Mercator   
   Datum: North American Datum of 1983   
   Type: Raster   
-  Year Published:  
+  Year Published:2020 
   
-  Date downloaded: 1/12/2022   
-  URL: https://www.twdb.texas.gov/groundwater/models/download.asp  
-  Webpage title:  Groundwater Availability Model (GAM) and Geodatabase Downloads   
-  Model: Gulf Coast Aquifer (northern portion) GAM, "Data" folder   
+  Date downloaded: 04/05/2022   
+  URL: https://geoinfo.nmt.edu/publications/openfile/details.cfml?Volume=614
+  Webpage title:  A Three-Dimensional Hydrogeologic Model from the Pecos Slope to the Southern High Plains, South Eastern    New Mexico    
+  Model: PecosSlope_HydrogeologicModel.mpk   
   
-  Metadata page: 
-  Webpage title:   
-  Reports to reference:   
-  - 
+  Metadata page: https://geoinfo.nmt.edu/publications/openfile/details.cfml?Volume=614
+  Webpage title:  A Three-Dimensional Hydrogeologic Model from the Pecos Slope to the Southern High Plains, Southeastern     New Mexico
+  Reports to reference: 
+  - "A Three-Dimensional Hydrogeologic Model from the Pecos Slope to the Southern High Plains, Southeastern New Mexico"|        New Mexico Bureau of Geology and Mineral Resources | Open-File Report 614 
   
 ## Data Cleaning 
 

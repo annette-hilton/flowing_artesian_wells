@@ -14,28 +14,39 @@ knitr::opts_chunk$set(echo = TRUE)
 ## By Aquifer System 
 
 
-### North Atlantic Coastal Plain: 
+### North Atlantic Coastal Plain   
 
 Hydrogeologic data: 
 
 Pope, J.P., Andreasen, D.C., McFarland, E.R., and Watt, M.K., 2016, Digital elevations and extents of regional hydrogeologic units in the Northern Atlantic Coastal Plain aquifer system from Long Island, New York, to North Carolina (ver. 1.1, January 2021) : U.S. Geological Survey data release, https://doi.org/10.5066/F70V89WN.
 
-Report: 
+Report:   
 
 Pope, J.P., Andreasen, D.C., McFarland, E.R., and Watt, M.K., 2016, Digital elevations and extents of regional hydrogeologic units in the Northern Atlantic Coastal Plain aquifer system from Long Island, New York, to North Carolina (ver. 1.1, December 2020): U.S. Geological Survey Data Series 996, 28 p., https://doi.org/10.3133/ds996.
 
-### Central Valley Aquifer: 
+### Central Valley Aquifer  
 
 Faunt, C.C. ed., 2009, Groundwater Availability of the Central Valley Aquifer: U.S. Geological Survey Professional Paper 1766, 225 p. Available at https://pubs.usgs.gov/pp/1766/ 
 
-### Mississippi Embayment Aquifer system: 
+### Mississippi Embayment Aquifer system  
 
  Hart, R.M., Clark, B.R., and Bolyard, S.E., 2008, Digital surfaces and thicknesses of selected hydrogeologic units within the Mississippi Embayment Regional Aquifer Study (MERAS): U.S. Geological Survey Scientific Investigations Report 2008-5098, 33 p.
 
-### Floridan Aquifer system: 
+### Floridan Aquifer system   
 
 Williams, L.J., and Dixon, J.F., 2015, Digital surfaces and thicknesses of selected hydrogeologic units of the Floridan aquifer system in Florida and parts of Georgia, Alabama, and South Carolina: U.S. Geological Survey Data Series 926, 24 p., https://dx.doi.org/10.3133/ds926.
 
-### Texas Gulf Coast Aquifer system: 
+### Texas Gulf Coast Aquifer system  
 
-### 
+### Dakota Aquifer 
+
+### Columbia Plateau Regional Aquifer System  
+
+Burns, E.R., Morgan, D.S., Peavler, R.S., and Kahle, S.C., 2011, Three-dimensional model of the geologic framework for the Columbia Plateau Regional Aquifer System, Idaho, Oregon, and Washington: U.S. Geological Survey Scientific Investigations Report 2010-5246, 44 p.
+
+### Roswell Artesian Basin   
+
+Hydrogeologic data: 
+Report: 
+
+Cikoski, C., Fichera, M., Mamer, E., Sturgis, L., 2020, A Three-Dimensional Hydrogeologic Model from the Pecos Slope the Southern High Plains, Southeastern New Mexico. New Mexico Bureau of Geology and Mineral Resources Open-File Report 614.
