@@ -1,0 +1,216 @@
+---
+title: "Roswell Artesian Basin--Well Classification"
+author: "Annette Hilton"
+date: "04/05/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error = FALSE)
+```
+
+# Introduction
+
+This project is an examination of early 1900s (~1890-1906) groundwater conditions in the Roswell Artesian Basin (New Mexico) as compared to present day (2010-2021).
+
+The purpose of this Rmd is to: 
+
+1) Determine well-aquifer classification 
+2) Compare artesian conditions 
+  
+
+## Attach Packages and Data 
+
+```{r}
+# Attach packages 
+
+library(plyr) # Be sure to load `plyr()` first, otherwise other functions in tidyverse break! 
+library(tidyverse)
+library(here)
+library(janitor)
+library(naniar)
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+## ArcGIS Data Analysis 
+
+The following steps were performed in ArcGIS: 
+
+Hydrogeological data: 
+Arcfile = "roswell" 
+
+1. Hydrogeologic layers (raster files) 
+2. Modern wells from New Mexico (USGS) (processed in Rmd `modern_data_cleaning.Rmd`) and early 1900s data (early1900s_dem_wgs84_final.txt)
+3. Use tool "Extract multi values to points" to determine well location intersection with geological raster layers
+4. Export resulting well data as a text files
+
+## Data Analysis (Post-Arc)
+
+### Hydrogeological data 
+
+```{r}
+# Read in modern data file from Arc 
+
+roswell_mod_fromarc <- readr::read_csv(here::here("data", "roswell", "roswell_modern_final_classify.txt")) %>% 
+  clean_names()
+
+roswell_early1900s_fromarc <- read_csv(here::here("data", "roswell", "early1900s_finaldem_classify.txt"), guess_max = 6653) %>% 
+  clean_names()
+
+```
+
+### Roswell Artesian Basin Information 
+
+Hydrologic Model Layer Surfaces:
+
+- Alluvium (surficial)
+- Artesia (artesian)
+
+
+### Aquifer analysis 
+
+- Find well bottom 
+
+```{r}
+# Convert `rastervalu` column from meters to feet (conversion: 1 meter = 3.28084 feet)
+# Add a column that is elevation minus well depth
+# Add a column that is elevation minus well water level 
+
+# Modern data 
+
+roswell_analysis_mod <- roswell_mod_fromarc %>% 
+  mutate(topo_ft = rastervalu * 3.28084) %>% 
+  mutate(well_bottom = topo_ft - well_depth_va) %>% 
+   mutate(keep = 
+           ifelse(is.na(alluvium) & is.na(ogallala_pva_base) & is.na(artesia), "NA", "keep")) %>% 
+  filter(!keep == "NA")
+
+ 
+# 1900 data 
+
+roswell_analysis_1900 <- roswell_early1900s_fromarc %>% 
+  mutate(topo_ft = ned10m_bilinear_cusa_albers102003 * 3.28084) %>% 
+  mutate(well_bottom = topo_ft - well_depth_ft) %>% 
+  mutate(keep = 
+           ifelse(is.na(alluvium) & is.na(artesia), "NA", "keep")) %>% 
+  filter(!keep == "NA")
+
+```
+
+#### Classify each well to an aquifer unit 
+
+Theory: 
+
+1900s: (only alluvium and artesia)
+
+well bottom < top of alluvium & well bottom > top of artesia OR artesia is NA = alluvium 
+well bottom < top of artesia = artesia  
+
+Modern 
+
+well bottom < top of alluvium & well bottom > top of artesia OR artesia is NA = alluvium 
+well bottom < top of artesia = artesia  
+
+
+```{r}
+# Classify wells into their aquifer units 
+
+# Modern data 
+
+roswell_class_mod <- roswell_analysis_mod %>% 
+  rowwise() %>%
+   mutate(aquifer = 
+        ifelse(well_bottom <= max(alluvium, ogallala_pva_base, na.rm = TRUE) & well_bottom >= max(ogallala_pva_base, artesia,
+                                                          na.rm = TRUE), "alluvium", 
+        ifelse(well_bottom <= ogallala_pva_base & well_bottom >= artesia, "ogallala",
+        ifelse(well_bottom <= artesia, "artesia", NA))))
+
+# 1900 data 
+
+roswell_class_1900 <- roswell_analysis_1900 %>% 
+  rowwise() %>%
+   mutate(aquifer = 
+        ifelse(well_bottom <= alluvium & well_bottom >= artesia, "alluvium", 
+        ifelse(well_bottom <= artesia, "artesia", NA)))
+
+```
+
+Summary of wells per aquifer unit 
+
+```{r}
+# Summary of wells per aquifer unit 
+
+# Modern data 
+summarymod_roswell <- roswell_class_mod %>% 
+  group_by(aquifer) %>% 
+  count(aquifer) 
+
+
+# 1900s data 
+
+summary1900_roswell <- roswell_class_1900 %>% 
+  group_by(aquifer) %>% 
+  count(aquifer)
+
+```
+
+
+#### Comparison of artesian conditions 
+
+1900 to 2010-2020 
+
+Modern n = 143
+1900s n = 386
+
+```{r}
+# MODERN 
+
+# Modern all 
+modern_roswell_all <- roswell_class_mod %>% 
+  filter(!is.na(aquifer))
+
+# write file for arc 
+write_tsv(modern_roswell_all, here::here("output_data", "roswell", "modern_roswell_all.txt"))
+
+# Modern alluvium 
+modern_roswell_alluvium <- modern_roswell_all %>% 
+  filter(aquifer == "alluvium") 
+
+# write file for arc 
+write_tsv(modern_roswell_alluvium, here::here("output_data", "roswell", "modern_roswell_alluvium.txt"))
+
+# Modern artesia 
+modern_roswell_artesia <- modern_roswell_all %>% 
+  filter(aquifer == "artesia") 
+
+# write file for arc 
+write_tsv(modern_roswell_artesia, here::here("output_data", "roswell", "modern_roswell_artesia.txt"))
+
+
+# 1900s 
+
+# 1900s all 
+historical_roswell_all <- roswell_class_1900 %>% 
+  filter(!is.na(aquifer))
+
+# write file for arc 
+write_tsv(historical_roswell_all, here::here("output_data", "roswell", "historical_roswell_all.txt"))
+
+# Historical alluvium 
+historical_roswell_alluvium <- historical_roswell_all %>% 
+  filter(aquifer == "alluvium") 
+
+# write file for arc 
+write_tsv(historical_roswell_alluvium, here::here("output_data", "roswell", "historical_roswell_alluvium.txt"))
+
+# Historical artesia 
+historical_roswell_artesia <- historical_roswell_all %>% 
+  filter(aquifer == "artesia") 
+
+# write file for arc 
+write_tsv(historical_roswell_artesia, here::here("output_data", "roswell", "historical_roswell_artesia.txt"))
+```
+
