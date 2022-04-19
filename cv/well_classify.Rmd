@@ -351,6 +351,9 @@ cv_confined_mod <- cv_cum_thickness_mod %>%
   mutate(artesian = 
            ifelse(static_wat <= 0, 1, 0))
 
+artesian_mod <- cv_confined_mod %>% 
+  filter(artesian == 1)
+
 # write file for arc 
 
 write_tsv(cv_confined_mod, here::here("output_data", "cv", "modern_confined_cv.txt"))

@@ -29,6 +29,100 @@ library(ggpubr)
 options(scipen=999)
 ```
 
+04/18/2022 Insert: 
+
+Summary of percentages, figures 
+
+```{r}
+summary_allsystems <- readr::read_csv(here::here("data", "regional_aq_syst_summary.csv")) %>% 
+  filter(!is.na(aquifer_system))
+```
+```{r}
+options(digits = 0)
+# Make percentages 
+
+summary_percent <- summary_allsystems %>% 
+  rowwise() %>% 
+  mutate(per_art = (artesian / no_wells) * 100) %>% 
+  mutate(per_noart = (no_artesian / no_wells) * 100) %>% 
+  mutate(id = paste(aquifer_system, period))
+
+# Write file 
+
+write_tsv(summary_percent, here::here("output_data", "summary_per_all.txt"))
+```
+
+Graph 
+
+```{r}
+ggplot(data = summary_percent,
+       aes(x= id, y= per_art)) +
+  geom_segment( aes(x= id, xend= id, y=0, yend= per_art), color="skyblue") +
+  geom_point( color="blue", size=4, alpha=0.6) +
+  theme_light() +
+  coord_flip() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+```
+take 2 
+
+```{r}
+
+graph_2 <- summary_percent %>% 
+  ungroup() %>% 
+ mutate(name = fct_relevel(id, 
+            "cv historical", "cv modern", "roswell historical", "roswell modern",  
+            "dakota historical", "dakota modern", "txgas historical", "txgas modern", 
+            "nacp historical", "nacp modern", "fl historical", "fl modern", 
+            "me historical", "me modern", "cp historical", "cp modern")) %>% 
+  ggplot(
+       aes(x= name, y= per_art)) +
+  geom_segment(aes(x= reorder(name, desc(name)), xend= name, y=0, yend= per_art), color="skyblue") +
+  geom_point( color="blue", size=4, alpha=0.6) +
+  theme_light() +
+  coord_flip() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+
+graph_2
+
+ggsave(here::here("output_data", "figures", "graph_2.jpg"))
+```
+
+Just bar graph 
+
+```{r}
+graph_3 <- summary_percent %>% 
+  ungroup() %>% 
+ mutate(name = fct_relevel(id, 
+            "cv historical", "cv modern", "roswell historical", "roswell modern",  
+            "dakota historical", "dakota modern", "txgas historical", "txgas modern", 
+            "nacp historical", "nacp modern", "fl historical", "fl modern", 
+            "me historical", "me modern", "cp historical", "cp modern")) %>% 
+  ggplot(
+       aes(x= name, y= per_art)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+
+graph_3
+
+ggsave(here::here("output_data", "figures", "graph_3.jpg"))
+```
+
+----------------------------------------------------------------------------------------------------
+BELOW IS DATED--VHG (BUT SAVE THIS) 
+----------------------------------------------------------------------------------------------------
 
 ## Change over time between early 1900s data and modern (2010-2020) data 
 

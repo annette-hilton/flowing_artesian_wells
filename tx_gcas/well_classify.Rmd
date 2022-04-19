@@ -393,8 +393,8 @@ Confined criteria coded out for now
 
 Chicot & Evangeline 1900 to 2010-2020 
 
-Modern n = 87
-1900s n = 1137
+Modern n = 
+1900s n = 48
 
 ```{r}
 
