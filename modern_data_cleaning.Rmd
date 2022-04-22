@@ -70,7 +70,7 @@ usgs_modern_med$site_no <- sub("^", "w", usgs_modern_med$site_no)
 write_tsv(usgs_modern_med, here::here("output_data", "usgs_modern.txt"))
 ```
 
-### Merge with DEM file 
+### Add DEM file and Confined/Unconfined USGS Definitions file  
 
 ```{r}
 # Modern data 
@@ -78,15 +78,32 @@ write_tsv(usgs_modern_med, here::here("output_data", "usgs_modern.txt"))
 dem_usgs_modern <- readr::read_csv(here::here("data", "dem", "dem_usgs_modern.csv"))
 
 ```
-
 ```{r}
-# Join files for full data 
+# Modern data 
+# USGS confined/unconfined definitions and aquifer designations
+# Data obtained by Dr. Scott Jasechko 4/20/2022 
 
-modern_final <- usgs_modern_med %>% 
-  full_join(dem_usgs_modern, by = "site_no")
+usgs_confined_unconf <- readr::read_tsv(here::here("data", "confined_unconf_usgs_fromscott.txt")) %>% 
+  clean_names() %>% 
+  filter(!code == "NaN") 
+
+usgs_confined_unconf$site_no <- sub("^", "w", usgs_confined_unconf$site_no)
 
 ```
 
+```{r}
+# Join DEM file
+
+modern_intermediate <- usgs_modern_med %>% 
+  full_join(dem_usgs_modern, by = "site_no")
+
+# Join confined/unconfined definitions file 
+
+modern_final <- modern_intermediate %>% 
+  left_join(usgs_confined_unconf, by = "site_no") %>% 
+  select(-uc_ccode, -usgs, -depth_m:-dec_coord_datum_cd)
+
+```
 
 # Individual Aquifer Systems 
 
