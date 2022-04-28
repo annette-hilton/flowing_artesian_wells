@@ -1,0 +1,419 @@
+---
+title: "Texas Gulf Coastal Aquifer System--Well Classification"
+author: "Annette Hilton"
+date: "01/12/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error = FALSE)
+```
+
+## Attach Packages 
+
+```{r}
+# Attach packages 
+
+library(plyr) # Be sure to load `plyr()` first, otherwise other functions in tidyverse break! 
+library(tidyverse)
+library(here)
+library(janitor)
+library(naniar)
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+# Introduction of Project & Methods 
+
+This project is an examination of early 1900s (~1890-1906) groundwater conditions in the Texas Gulf Coast Aquifer System as compared to present day (2010-2021).
+
+The purpose of this Rmd is to: 
+
+*Pre-Rmd*: Data were processed in ArcGIS for DEM value 
+
+1) Prep data for input to ArcGIS (for hydrogeological analysis) 
+2) After ArcGIS processing: 
+
+a) Determine well-aquifer classification 
+ 
+
+# Overview of Texas Gulf Coastal Aquifer System 
+
+```{r, fig.cap= 'Texas Gulf Coastal Aquifer System aerial extent (Kasmarek and Robinson, 2004)', fig.align='center', output.width= "200px", echo= FALSE}
+
+knitr::include_graphics(here::here("images", "tx_aerial.png"))
+
+```
+
+```{r, fig.cap= 'Texas Gulf Coastal Aquifer System cross section (Kasmarek and Robinson, 2004)', fig.align='center', output.width= "200px", echo= FALSE}
+
+knitr::include_graphics(here::here("images", "tx_cross_section.png"))
+
+```
+### Physiography  
+
+Hydrogeology: 
+
+Chicot aquifer 
+Evangeline aquifer 
+Burkeville confining unit 
+Jasper aquifer 
+Catahoula confining unit 
+
+Climate: 
+
+## Read in data & process 
+
+```{r}
+# Modern data 
+# Read in modern USGS data w/ DEM 
+dem_usgs_modern <- readr::read_csv(here::here("data", "dem", "dem_usgs_modern.csv")) 
+
+# Read in modern USGS data full file (from Rmd `modern_data_cleaning.Rmd`)
+usgs_modern <- readr::read_tsv(here::here("output_data", "usgs_modern.txt"))
+
+```
+
+### Join DEM files with full data files 
+
+```{r}
+# Join modern 
+
+modern_join <- usgs_modern %>% 
+  full_join(dem_usgs_modern, by = "site_no")
+
+```
+
+## Data Analysis (Pre-Arc)
+
+### Refine dataset for the Texas Gulf Coastal Aquifer System (GCAS)
+
+```{r}
+# Only keep well data for states in GCAS:  
+# Texas
+
+tx_gcas <- modern_join %>% 
+  filter(id.x == "tx") 
+
+```
+
+
+### Prep data for import into ArcGIS 
+
+```{r}
+# Write to text file to then export to ArcGIS
+
+write_tsv(tx_gcas, here::here("output_data", "tx", "txgcas_modern_toclassify.txt"))
+  
+```
+
+
+## ArcGIS Data Analysis 
+
+The following steps were performed in ArcGIS: 
+
+Hydrogeological data: 
+Arcfile = "tx_gcas" 
+**Use ArcMap document (not ArcPro) 
+
+1. Import USGS TX GCAS geologic data 
+2. Import USGS wells (text file from analysis above; 'txgcas_modern_toclassify.txt') and early 1900s data (early1900s_dem_wgs84_final.txt)
+  Modern data points = NAD 1983 
+  Early 1900s = WGS84
+3. Use tool "Extract multi values to points" to determine well location intersection with geological raster layers
+4. Export resulting well data as a text file 
+
+## Data Analysis (Post-Arc)
+
+### Hydrogeological data 
+
+```{r}
+# Read in modern data file from Arc 
+
+txgcas_mod_fromarc <- readr::read_csv(here::here("data", "tx", "txgcas_modern_fromarc.txt"))
+
+# Read in early 1900s data file from Arc 
+
+early1900s_fromarc <- readr::read_csv(here::here("data", "tx", "early1900s_txgcas_fromarc.txt"))
+
+# Read in meta file for early 1900s 
+
+early1900s_meta <- readr::read_tsv(here::here("output_data", "early1900s_arc.txt"))
+
+```
+
+Tidy data 
+**Note: ArcGIS somehow messes up data (water level, well depth)--from DEM, only keep the site ID and the DEM value. For 1900s data & modern, join with old file here. 
+
+```{r}
+# Basic data tidying 
+# Create `na_strings` to indicate pesky NA values
+# Replace NA numeric indicators with "NA" 
+# Rename long column names with their short hydrogeologic formation 
+
+# Modern data
+
+na_strings <- c("-9999", "-9999.00", "-9999.000", "-9999.0000", "-9999.00000", "-9999.000000")
+
+txgcas_mod_tidy <- txgcas_mod_fromarc %>% 
+  clean_names() %>% 
+  select(-objectid) %>% 
+  replace_with_na_all(condition = ~.x %in% na_strings) 
+
+# Join with meta file 
+
+txgcas_mod_join <- txgcas_mod_tidy %>% 
+  full_join(modern_join, by = "site_no") %>% 
+  select(-dec_lat_va.x:-artesian.x, -RASTERVALU) %>% 
+  clean_names()
+
+# 1900s data 
+
+early1900s_tidy <- early1900s_fromarc %>% 
+  clean_names() %>% 
+  select(-oid, -objectid) 
+
+# Join with meta file 
+
+early1900s_join <- early1900s_tidy %>% 
+  full_join(early1900s_meta, by = "id") %>% 
+  clean_names() %>% 
+  select(-latitude_x:-artesian_x)
+
+```
+
+### Texas Gulf Coastal Aquifer Information 
+
+Hydrogeologic Layer Surfaces:
+
+- Chicot (surficial/unconfined) 
+- Evangaline aquifer
+- Burkeville confining unit 
+- Jasper aquifer
+- Catahoula confining unit 
+
+
+### Aquifer analysis 
+
+- Find well bottom 
+- Remove observations that do not fall within TX GCAS (all NAs) 
+
+```{r}
+# Convert `rastervalu` column from meters to feet (conversion: 1 meter = 3.28084 feet)
+# Add a column that is elevation minus well depth
+# Add column to remove rows if hydrogeologic rasters are all NAs (does not intersect with TX GCAS) 
+
+# Modern data 
+
+txgcas_analysis_mod <- txgcas_mod_join %>% 
+  mutate(topo_ft = rastervalu * 3.28084) %>% 
+  mutate(well_bottom = topo_ft - well_depth_va_y) %>% 
+   mutate(keep = 
+           ifelse(is.na(top_chicot) & is.na(base_chicot) & is.na(top_eva) 
+                  & is.na(base_eva) & is.na(top_burk) & is.na(base_burk)
+                  & is.na(top_jasper) & is.na(base_jasper), "NA", "keep")) %>% 
+  filter(!keep == "NA")
+
+
+# 1900s data 
+
+txgcas_analysis_1900 <- early1900s_join %>% 
+  mutate(topo_ft = ned10m_bilinear_cusa_albers102003 * 3.28084) %>% 
+  mutate(well_bottom = topo_ft - well_depth_ft_y) %>% 
+   mutate(keep = 
+          ifelse(is.na(top_chicot) & is.na(base_chicot) & is.na(top_eva) 
+                  & is.na(base_eva) & is.na(top_burk) & is.na(base_burk)
+                  & is.na(top_jasper) & is.na(base_jasper), "NA", "keep")) %>% 
+  filter(!keep == "NA")
+```
+
+#### Classify each well to an aquifer unit 
+
+Process: 
+
+If well bottom is greater than second unit (top), then it falls within the first unit (second unit top is the bottom of the first unit). 
+
+Well bottom < topo_ft & well bottom > max(base_chicot:base_jasper) = "chicot”
+Well bottom < base_chicot & well bottom > max(base_eva:base_jasper) = “eva"
+well bottom < base_eva & well bottom > max(base_burke:base_jasper) = "burke" 
+well bottom < base_burke & well bottom > base_jasper = "jasper" 
+well bottom < base_jasper = "catahoula" 
+
+
+```{r}
+# Code for assigning each well to an aquifer unit 
+# Not elegant but currently works! 
+
+# Modern data 
+
+txgcas_class_mod <- txgcas_analysis_mod %>% 
+  rowwise() %>%
+  mutate(aquifer = 
+        ifelse(well_bottom < topo_ft & well_bottom >= max(base_chicot, top_eva, base_eva, top_burk, base_burk, top_jasper, base_jasper,
+                                                          na.rm = TRUE), "chicot", 
+        ifelse(well_bottom < top_eva & well_bottom >= max(base_eva, top_burk, base_burk, top_jasper, base_jasper, na.rm = TRUE), "eva", 
+        ifelse(well_bottom < top_burk & well_bottom >= max(base_burk, top_jasper, base_jasper, na.rm = TRUE), "burke", 
+        ifelse(well_bottom < top_jasper & well_bottom >  base_jasper, "jasper", 
+        ifelse(well_bottom < base_jasper, "catahoula", NA))))))
+
+
+# 1900s data 
+
+txgcas_class_1900 <- txgcas_analysis_1900 %>% 
+  rowwise() %>%
+  mutate(aquifer = 
+        ifelse(well_bottom < topo_ft & well_bottom >= max(base_chicot, top_eva, base_eva, top_burk, base_burk, top_jasper, base_jasper,
+                                                          na.rm = TRUE), "chicot", 
+        ifelse(well_bottom < top_eva & well_bottom >= max(base_eva, top_burk, base_burk, top_jasper, base_jasper, na.rm = TRUE), "eva", 
+        ifelse(well_bottom < top_burk & well_bottom >= max(base_burk, top_jasper, base_jasper, na.rm = TRUE), "burke", 
+        ifelse(well_bottom < top_jasper & well_bottom >  base_jasper, "jasper", 
+        ifelse(well_bottom < base_jasper, "catahoula", NA))))))
+ 
+```
+
+
+Summary of wells per aquifer unit 
+
+```{r}
+# Summary of wells per aquifer unit 
+
+# Modern data 
+summarymod_txgcas <- txgcas_class_mod %>% 
+  group_by(aquifer) %>% 
+  count(aquifer) 
+
+
+# 1900s data 
+
+summary1900_txgcas <- txgcas_class_1900 %>% 
+  group_by(aquifer) %>% 
+  count(aquifer)
+
+# join summaries 
+
+full_summary <- summary1900_txgcas %>% 
+  full_join(summarymod_txgcas, by = "aquifer") %>% 
+  rename(historical = n.x, 
+         modern = n.y)
+
+write_tsv(full_summary, here::here("output_data", "tx", "full_summary_txgcas.txt"))
+
+```
+
+---------------------------------------------------------------
+Confined criteria coded out for now
+---------------------------------------------------------------
+
+
+<!-- #### Confined Well Criteria  -->
+
+<!-- Confined aquifer units (Burkeville):  -->
+
+<!-- - Criteria: Must have at least 10 m (33 ft) of confining material above -->
+<!-- - Code: Dependent on the aquifer, calculate the sum of the confining unit thickness above. If the sum of the confining unit thickness is >= 33 ft (10m), then "keep" the well.  -->
+
+
+<!-- First, determine thickness of aquifer units  -->
+
+<!-- ```{r} -->
+<!-- # Thickness of aquifer units  -->
+
+<!-- # Modern data  -->
+
+<!-- me_thickness_mod <- me_class_mod %>%  -->
+<!--   mutate( -->
+<!--     vkbg_thick = vkbg_surf - ucaq_surf,  -->
+<!--     ucaq_thick = ucaq_surf - mccu_surf,  -->
+<!--     mccu_thick = mccu_surf - mcaq_surf,  -->
+<!--     mcaq_thick = mcaq_surf - lccu_surf,  -->
+<!--     lccu_thick = lccu_surf - lcaq_surf,  -->
+<!--     lcaq_thick = lcaq_surf - mwaq_surf,  -->
+<!--     mwaq_thick = mwaq_surf - lwaq_surf,  -->
+<!--     lwaq_thick = lwaq_surf - mdwy_surf -->
+<!--   ) -->
+
+<!-- # 1900s data  -->
+
+<!-- me_thickness_1900 <- me_class_1900 %>%  -->
+<!--   mutate( -->
+<!--     vkbg_thick = vkbg_surf - ucaq_surf,  -->
+<!--     ucaq_thick = ucaq_surf - mccu_surf,  -->
+<!--     mccu_thick = mccu_surf - mcaq_surf,  -->
+<!--     mcaq_thick = mcaq_surf - lccu_surf,  -->
+<!--     lccu_thick = lccu_surf - lcaq_surf,  -->
+<!--     lcaq_thick = lcaq_surf - mwaq_surf,  -->
+<!--     mwaq_thick = mwaq_surf - lwaq_surf,  -->
+<!--     lwaq_thick = lwaq_surf - mdwy_surf -->
+<!--   ) -->
+
+<!-- ``` -->
+
+<!-- Then, determine cumulative thickness & which wells meet criteria  -->
+
+<!-- ```{r} -->
+<!-- # Only consider confining units for thickness  -->
+<!-- # VKBG, MCCU, LCCU -->
+
+<!-- # Modern  -->
+
+<!-- me_cum_thickness_mod <- me_thickness_mod %>%  -->
+<!--   rowwise() %>%  -->
+<!--     dplyr::mutate(cum_thick =  -->
+<!--         ifelse(aquifer == "mrva", sum(vkbg_thick, mccu_thick, na.rm = TRUE),  -->
+<!--         ifelse(aquifer == "ucaq", sum(vkbg_thick),  -->
+<!--         ifelse(aquifer == "mcaq", sum(vkbg_thick, mccu_thick, na.rm = TRUE), -->
+<!--         ifelse(aquifer == "lcaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE),  -->
+<!--         ifelse(aquifer == "mwaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE),  -->
+<!--         ifelse(aquifer == "lwaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE),  -->
+<!--                NA))))))) %>%  -->
+<!--   dplyr::mutate(keep =  -->
+<!--            ifelse(cum_thick >= 33, "keep", NA)) -->
+
+
+<!-- # 1900s  -->
+
+<!-- me_cum_thickness_1900 <- me_thickness_1900 %>%  -->
+<!--   rowwise() %>%  -->
+<!--     dplyr::mutate(cum_thick =  -->
+<!--         ifelse(aquifer == "mrva", sum(vkbg_thick, mccu_thick, na.rm = TRUE),  -->
+<!--         ifelse(aquifer == "ucaq", sum(vkbg_thick),  -->
+<!--         ifelse(aquifer == "mcaq", sum(vkbg_thick, mccu_thick, na.rm = TRUE), -->
+<!--         ifelse(aquifer == "lcaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE),  -->
+<!--         ifelse(aquifer == "mwaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE),  -->
+<!--         ifelse(aquifer == "lwaq", sum(vkbg_thick, mccu_thick, lccu_thick, na.rm = TRUE),  -->
+<!--                NA))))))) %>%  -->
+<!--   dplyr::mutate(keep =  -->
+<!--            ifelse(cum_thick >= 33, "keep", NA)) -->
+<!-- ``` -->
+
+
+#### Comparison of artesian conditions 
+
+Chicot & Evangeline 1900 to 2010-2020 
+
+Modern n = 
+1900s n = 48
+
+```{r}
+
+# Modern 
+modern_txgcas <- txgcas_class_mod %>% 
+  filter(aquifer %in% c("chicot", "eva")) 
+
+# write file for arc 
+
+write_tsv(modern_txgcas, here::here("output_data", "tx", "modern_txgcas.txt"))
+
+# 1900s 
+historical_txgcas <- txgcas_class_1900 %>% 
+  filter(aquifer %in% c("chicot", "eva"))
+
+# write file for arc 
+
+write_tsv(historical_txgcas, here::here("output_data", "tx", "historical_txgcas.txt"))
+
+```
+
+
