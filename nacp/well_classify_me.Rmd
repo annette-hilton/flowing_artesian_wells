@@ -238,6 +238,27 @@ me_class_1900 <- me_analysis_1900 %>%
 
 ```
 
+Summary of wells per aquifer unit
+
+```{r}
+# Summary of wells per aquifer unit 
+
+# Modern data 
+summarymod_me <- me_class_mod %>% 
+  group_by(aquifer) %>% 
+  count(aquifer) 
+
+checking <- me_class_mod %>% 
+  filter(!is.na(code))
+
+
+# 1900s data 
+
+summary1900_me <- me_class_1900 %>% 
+  group_by(aquifer) %>% 
+  count(aquifer)
+
+```
 
 ### Separate each aquifer/unit and confined
 
@@ -263,7 +284,6 @@ confined_criteria_mod <- me_class_mod %>%
            ifelse(aquifer == "mwaq" & !is.na(lccu_surf) | !is.na(mccu_surf) | !is.na(vkbg_surf), "confined", 
            ifelse(aquifer == "lwaq" & !is.na(lccu_surf) | !is.na(mccu_surf) | !is.na(vkbg_surf), "confined", 
            ifelse(aquifer == "mdwy" & !is.na(lccu_surf) | !is.na(mccu_surf) | !is.na(vkbg_surf), "confined", "unconfined")))))))))))
-
 ```
 
 #### 1900 Data
@@ -288,7 +308,6 @@ confined_criteria_1900 <- me_class_1900 %>%
            ifelse(aquifer == "mwaq" & !is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined", 
            ifelse(aquifer == "lwaq" & !is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined", 
            ifelse(aquifer == "mdwy" & !is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined", "unconfined")))))))))))
-
 ```
 
 ### Accuracy check with USGS Confined/Unconfined 
@@ -314,119 +333,12 @@ summary_check <- me_modern_check %>%
   group_by(check) %>% 
   count(check)
 
-# Checked wrong data (commented out)
-
 # Isolate wrong confined 
 
-# confined_wrong <- me_modern_check %>% 
-#   filter(check == "wrong_c")
-# 
-# write_tsv(confined_wrong, here::here("output_data", "me", "confined_wrong.txt"))
+confined_wrong <- me_modern_check %>% 
+  filter(check == "wrong_c")
 
-```
-
-Make table from summary of error/unconfined-confined checking --working on this, not complete 05/02/22
-
-```{r}
-error_table <- summary_check %>% 
-  filter(!is.na(check)) %>%
-  mutate(total_n = colSums(summary_check[,-1])) 
-
-```
-
-### Make summary tables 
-
-To count confined, unconfined, artesian by aquifer unit 
-
-```{r}
-# Final summaries of "correct" data 
-
-# Modern data
-
-# Confined/unconfined and artesian by aquifer unit
-
-summary_mod_final_art <- me_modern_check %>% 
-  filter(!check %in% c("wrong_uc", "wrong_c")) %>% 
-  group_by(aquifer, status, artesian) %>% 
-  count(aquifer) %>% 
-  filter(!is.na(status))
-
-# Pivot wider 
-
-mod_final_wide <- pivot_wider(summary_mod_final_art, 
-                          names_from = c(status, artesian), 
-                          values_from = n) 
-
-# Write to file 
-write_csv(mod_final_wide, here::here("output_data", "me", "mod_final_table.txt"))
-  
-
-# 1900s data
-
-# Confined/unconfined by aquifer unit 
-summary_1900_final <- confined_criteria_1900 %>% 
-  group_by(aquifer, status, artesian) %>% 
-  count(aquifer) 
-
-# Pivot wider 
-
-early1900s_final_wide <- pivot_wider(summary_1900_final, 
-                          names_from = c(status, artesian), 
-                          values_from = n) 
-
-# Write to file 
-write_csv(early1900s_final_wide, here::here("output_data", "me", "early1900s_final_table.txt"))
-
-```
-
-Fraction of confined wells to depth 
-
-```{r}
-# Data frame for plots 
-ggplot_modern <- me_modern_check %>% 
-  filter(!check %in% c("wrong_c", "wrong_uc")) %>% 
-  filter(!is.na(check))
-
-# Violin plot comparing confined, unconfined and USGS data/no data 
-ggplot(ggplot_modern, 
-       aes(x = status, 
-           y = well_depth_va, 
-           fill = check)) + 
-  geom_violin()
-
-```
-Can't figure out binning...how can this be so hard? (05/02/22) 
-
-```{r}
-# # Binned data frame (~10 m intervals)
-# 
-# ggplot_mod_bin <- ggplot_modern %>% 
-#   ungroup() %>% 
-#   mutate(depth_bin = dplyr::ntile(well_depth_va, 33)) %>% 
-#   mutate(confined_num = ifelse(status == "unconfined", 0, 1)) %>% 
-#   group_by(depth_bin) %>% 
-#   add_count(depth_bin)
-#   
-# ggplot_mod_bin2 <- ggplot_modern %>% 
-#   ungroup() %>% 
-#   mutate(depth_bin = cut(well_depth_va, breaks = c(0, 33, 66, 99, ))
-#          
-# test <- ggplot_modern %>% 
-#   ungroup() %>% 
-#   mutate(depth_bin = 
-#            case_when(well_depth_va <= 33 ~"1", 
-#                      well_depth_va <= 66 ~"2", 
-#                      well_depth_va <= 99 ~"3", 
-#                      TRUE ~"NA"))
-# 
-# 
-# 
-# %>% 
-#   mutate(confined_num = ifelse(status == "unconfined", 0, 1)) %>% 
-#   group_by(depth_bin) %>% 
-#   add_count(depth_bin)
-# 
-# breaks = seq(33 - )
+write_tsv(confined_wrong, here::here("output_data", "me", "confined_wrong.txt"))
 
 ```
 
@@ -437,16 +349,26 @@ Can't figure out binning...how can this be so hard? (05/02/22)
 
 
 ```{r}
-# All aquifers that are confined by our criteria, excluding "incorrect" ones (Modern) with USGS correction 
+# All aquifers that are confined by our criteria  
+# Minus the incorrect ones 
 
-# Modern wells 
+# Modern data only USGS confirmed 
 me_confined_mod <- me_modern_check %>% 
+  filter(check == "true_c") %>% 
+  mutate(artesian = 
+           ifelse(median < 0, 1, 0))
+
+# plus the other no data 
+me_confined_mod_all <- me_modern_check %>% 
   filter(check %in% c("true_c", "no_data_c")) %>% 
   mutate(artesian = 
            ifelse(median < 0, 1, 0))
 
 # Write as tsv 
 write_csv(me_confined_mod, here::here("output_data", "me", "me_confined_mod.txt"))
+
+# Write as tsv 
+write_csv(me_confined_mod_all, here::here("output_data", "me", "me_confined_mod_all.txt"))
 
 # 1900 data 
 me_confined_1900 <- confined_criteria_1900 %>% 

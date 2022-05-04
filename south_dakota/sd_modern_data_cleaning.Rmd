@@ -42,7 +42,7 @@ options(scipen=999)
 # Methods 
 
 1. Read in modern data of South Dakota 
-  a. Drilling wells from South Dakota Department of Agriculture and Natural Resources (https://apps.sd.gov/nr68welllogs/). From 1/01/1800-11/22/2021 
+  <!-- a. Drilling wells from South Dakota Department of Agriculture and Natural Resources (https://apps.sd.gov/nr68welllogs/). From 1/01/1800-11/22/2021  --> REMOVED 4/29/22
   b. Observation wells from South Dakota Department of Agriculture and Natural Resources (https://apps.sd.gov/nr69obswell/default.aspx#viewHelp). All records up to 11/18/2021
   c. USGS data for South Dakota 
 2. Tidy data 
@@ -54,49 +54,49 @@ options(scipen=999)
 
 ## Read in Data
 
-### Drilling wells 
+<!-- ### Drilling wells  --> DRILLING WELLS REMOVED, UNRELIABLE FOR ANALYSIS 04/29/2022
 
-Pos = below land surface 
-Neg = artesian 
+<!-- Pos = below land surface  -->
+<!-- Neg = artesian  -->
 
-```{r}
-sd_raw_drill <-
-    list.files(path = here::here("data", "south_dakota", "sd_drill_wells"),
-               pattern = "*.csv", 
-               full.names = T) %>% 
-    map_df(~read_csv(., col_types = cols(.default = "c"))) 
+<!-- ```{r} -->
+<!-- sd_raw_drill <- -->
+<!--     list.files(path = here::here("data", "south_dakota", "sd_drill_wells"), -->
+<!--                pattern = "*.csv",  -->
+<!--                full.names = T) %>%  -->
+<!--     map_df(~read_csv(., col_types = cols(.default = "c")))  -->
 
-```
+<!-- ``` -->
 
-## Tidy Data 
+<!-- ## Tidy Data  -->
 
-```{r}
-# Tidy data 
+<!-- ```{r} -->
+<!-- # Tidy data  -->
 
-sd_tidy_drill <- sd_raw_drill %>% 
-  clean_names() %>% 
-  select(-guid, -comp_rpt_pdf) %>% 
-  mutate(date = lubridate::mdy(well_comp_date), 
-         year = lubridate::year(date)) %>% 
-  filter(year >= 2010) %>% 
-  filter(!is.na(static_value), 
-         !is.na(depth)) %>% 
-  mutate(id = seq(1:2598), 
-         artesian = ifelse(static_value <= 0, 1, 0)) 
+<!-- sd_tidy_drill <- sd_raw_drill %>%  -->
+<!--   clean_names() %>%  -->
+<!--   select(-guid, -comp_rpt_pdf) %>%  -->
+<!--   mutate(date = lubridate::mdy(well_comp_date),  -->
+<!--          year = lubridate::year(date)) %>%  -->
+<!--   filter(year >= 2010) %>%  -->
+<!--   filter(!is.na(static_value),  -->
+<!--          !is.na(depth)) %>%  -->
+<!--   mutate(id = seq(1:2598),  -->
+<!--          artesian = ifelse(static_value <= 0, 1, 0))  -->
 
-sd_tidy_drill$id <- sub("^", "w", sd_tidy_drill$id) 
+<!-- sd_tidy_drill$id <- sub("^", "w", sd_tidy_drill$id)  -->
 
-# Make consistent with other data frame 
+<!-- # Make consistent with other data frame  -->
 
-sd_drill_join <- sd_tidy_drill %>% 
-  rename(original_date = well_comp_date, 
-         median_level = static_value) %>% 
-  mutate(elevation = NA) %>% 
-  select(id, lat, long, aquifer, elevation, original_date, date, year, depth, median_level, artesian) 
+<!-- sd_drill_join <- sd_tidy_drill %>%  -->
+<!--   rename(original_date = well_comp_date,  -->
+<!--          median_level = static_value) %>%  -->
+<!--   mutate(elevation = NA) %>%  -->
+<!--   select(id, lat, long, aquifer, elevation, original_date, date, year, depth, median_level, artesian)  -->
 
-sd_drill_join$median_level <- as.numeric(sd_drill_join$median_level)
+<!-- sd_drill_join$median_level <- as.numeric(sd_drill_join$median_level) -->
 
-```
+<!-- ``` -->
 
 ## Read in Data 
 
@@ -218,7 +218,7 @@ sd_usgs_join$depth <- as.character(sd_usgs_join$depth)
 Join all dataframes (monitoring wells, drilling wells, USGS)
 
 ```{r}
-sd_full <- rbind(sd_obs_join, sd_drill_join, sd_usgs_join)
+sd_full <- rbind(sd_obs_join, sd_usgs_join)
 ```
 
 Write for ArcGIS 
