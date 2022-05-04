@@ -35,6 +35,27 @@ library(data.table)
 
 options(scipen=999)
 ```
+
+# Overview of North Atlantic Coastal Plain Aquifer System 
+
+```{r, fig.cap= 'North Atlantic Coastal Plain Aquifer System aerial extent (Masterson et al., 2016)', fig.align='center', output.width= "200px", echo= FALSE}
+
+knitr::include_graphics(here::here("images", "nacp_map.png"))
+
+```
+
+```{r, fig.cap= 'North Atlantic Coastal Plain Aquifer System aquifer units (Masterson et al., 2016)', fig.align='center', output.width= "200px", echo= FALSE}
+
+knitr::include_graphics(here::here("images", "nacp_hydro.png"))
+
+```
+
+```{r, fig.cap= 'North Atlantic Coastal Plain Aquifer System hydrogeological GIS layers (Pope et al., 2016)', fig.align='center', output.width= "200px", echo= FALSE}
+
+knitr::include_graphics(here::here("images", "nacp_hydro2.png"))
+
+```
+
 ## ArcGIS Data Analysis
 
 The following steps were performed in ArcGIS:
@@ -42,7 +63,7 @@ The following steps were performed in ArcGIS:
 Hydrogeological data: Arcfile = "nacp_classify" (ArcPro)
 
 1.  Hydrogeologic layers (raster files)
-2.  Modern wells from ME (USGS) (processed in Rmd
+2.  Modern wells from NACP (USGS) (processed in Rmd
     `modern_data_cleaning.Rmd`) and early 1900s data
     (early1900s_dem_wgs84_final.txt)
 3.  Use tool "Extract multi values to points" to determine well location
@@ -418,192 +439,44 @@ confined_criteria_mod <- nacp_class_mod %>%
   mutate(status = 
            ifelse(is.na(aquifer), NA,
            ifelse(aquifer %in% c("surf", "nacp_cu01"), "unconfined", 
-           ifelse(aquifer == "nacp_aq02u" & is.na(nacp_cu01), "unconfined",
-           ifelse(aquifer == "nacp_cu02" & is.na(nacp_cu01), "unconfined", 
-           ifelse(aquifer == "nacp_aq03l" & !is.na(nacp_cu01) | !is.na(nacp_cu02), "confined",
-           ifelse(aquifer == "nacp_cu03" & !is.na(nacp_cu01) | !is.na(nacp_cu02), "confined",
-           ifelse(aquifer == "nacp_aq04p" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03), "confined",
-           ifelse(aquifer == "nacp_cu04" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03), "confined", 
-           ifelse(aquifer == "nacp_aq05a" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04), "confined", 
-           ifelse(aquifer == "nacp_cu05" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04), "confined", 
-           ifelse(aquifer == "nacp_aq06m" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05), "confined",
-           ifelse(aquifer == "nacp_cu06" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05), "confined", 
-           ifelse(aquifer == "nacp_aq07m" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06), "confined",
-           ifelse(aquifer == "nacp_cu07" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06), "confined",
-           ifelse(aquifer == "nacp_aq08m" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07), "confined",
-           ifelse(aquifer == "nacp_cu08" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07), "confined",
-           ifelse(aquifer == "nacp_aq09p" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
-                   |!is.na(nacp_cu08), "confined",
-           ifelse(aquifer == "nacp_cu09" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
-                   |!is.na(nacp_cu08), "confined",
-           ifelse(aquifer == "nacp_aq10_p" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
-                   |!is.na(nacp_cu08) | !is.na(nacp_cu09), "confined",
-           ifelse(aquifer == "nacp_cu10b" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
-                   |!is.na(nacp_cu08) | !is.na(nacp_cu09), "confined",
-                  "unconfined")))))))))))))))))))))
-
-confined_criteria_mod1 <- nacp_class_mod %>% 
-  rowwise() %>% 
-  mutate(status = 
-           ifelse(is.na(aquifer), NA,
-           ifelse(aquifer %in% c("surf", "nacp_cu01"), "unconfined", 
            ifelse(aquifer == "nacp_aq02u" & !is.na(nacp_cu01), "confined",
            ifelse(aquifer == "nacp_cu02" & !is.na(nacp_cu01), "confined", 
-           ifelse(aquifer == "nacp_aq03l" & is.na(nacp_cu01) | is.na(nacp_cu02), "unconfined",
-           ifelse(aquifer == "nacp_cu03" & is.na(nacp_cu01) | is.na(nacp_cu02), "unconfined",
-           ifelse(aquifer == "nacp_aq04p" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03), "unconfined",
-           ifelse(aquifer == "nacp_cu04" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03), "unconfined", 
-           ifelse(aquifer == "nacp_aq05a" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03) |
-                    is.na(nacp_cu04), "unconfined", 
-           ifelse(aquifer == "nacp_cu05" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03) |
-                    is.na(nacp_cu04), "unconfined", 
-           ifelse(aquifer == "nacp_aq06m" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03) |
-                    is.na(nacp_cu04) | is.na(nacp_cu05), "unconfined",
-           ifelse(aquifer == "nacp_cu06" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03) |
-                    is.na(nacp_cu04) | is.na(nacp_cu05), "unconfined", 
-           ifelse(aquifer == "nacp_aq07m" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03) |
-                    is.na(nacp_cu04) | is.na(nacp_cu05) | is.na(nacp_cu06), "unconfined",
-           ifelse(aquifer == "nacp_cu07" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03) |
-                    is.na(nacp_cu04) | is.na(nacp_cu05) | is.na(nacp_cu06), "unconfined",
-           ifelse(aquifer == "nacp_aq08m" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03) |
-                    is.na(nacp_cu04) | is.na(nacp_cu05) | is.na(nacp_cu06) | is.na(nacp_cu07), "unconfined",
-           ifelse(aquifer == "nacp_cu08" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03) |
-                    is.na(nacp_cu04) | is.na(nacp_cu05) | is.na(nacp_cu06) | is.na(nacp_cu07), "unconfined",
-           ifelse(aquifer == "nacp_aq09p" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03) |
-                    is.na(nacp_cu04) | is.na(nacp_cu05) | is.na(nacp_cu06) | is.na(nacp_cu07) 
-                   |is.na(nacp_cu08), "unconfined",
-           ifelse(aquifer == "nacp_cu09" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03) |
-                    is.na(nacp_cu04) | is.na(nacp_cu05) | is.na(nacp_cu06) | is.na(nacp_cu07) 
-                   |is.na(nacp_cu08), "unconfined",
-           ifelse(aquifer == "nacp_aq10_p" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03) |
-                    is.na(nacp_cu04) | is.na(nacp_cu05) | is.na(nacp_cu06) | is.na(nacp_cu07) 
-                   |is.na(nacp_cu08) | is.na(nacp_cu09), "unconfined",
-           ifelse(aquifer == "nacp_cu10b" & is.na(nacp_cu01) | is.na(nacp_cu02) | is.na(nacp_cu03) |
-                    is.na(nacp_cu04) | is.na(nacp_cu05) | is.na(nacp_cu06) | is.na(nacp_cu07) 
-                   |is.na(nacp_cu08) | is.na(nacp_cu09), "unconfined",
-                  "confined")))))))))))))))))))))
-
-#fifelse 
-
-confined_criteria_mod3 <- nacp_class_mod %>% 
-  rowwise() %>% 
-  mutate(status = 
-           fifelse(aquifer %in% c("surf", "nacp_cu01"), "topunconfined", 
-           fifelse(aquifer == "nacp_aq02u" & is.na(nacp_cu01), "unconfined",
-           fifelse(aquifer == "nacp_cu02" & is.na(nacp_cu01), "unconfined", 
-           fifelse(aquifer == "nacp_aq03l" & !is.na(nacp_cu01) | !is.na(nacp_cu02), "1confined",
-           fifelse(aquifer == "nacp_cu03" & !is.na(nacp_cu01) | !is.na(nacp_cu02), "2confined",
-           fifelse(aquifer == "nacp_aq04p" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03), "3confined",
-           fifelse(aquifer == "nacp_cu04" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03), "4confined", 
-           fifelse(aquifer == "nacp_aq05a" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04), "5confined", 
-           fifelse(aquifer == "nacp_cu05" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04), "6confined", 
-           fifelse(aquifer == "nacp_aq06m" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05), "7confined",
-           fifelse(aquifer == "nacp_cu06" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05), "8confined", 
-           fifelse(aquifer == "nacp_aq07m" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06), "9confined",
-           fifelse(aquifer == "nacp_cu07" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06), "10confined",
-           fifelse(aquifer == "nacp_aq08m" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07), "11confined",
-           fifelse(aquifer == "nacp_cu08" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
-                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07), "12confined",
-           fifelse(aquifer == "nacp_aq09p" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+           ifelse(aquifer == "nacp_aq03l" & (!is.na(nacp_cu01) | !is.na(nacp_cu02)), "confined",
+           ifelse(aquifer == "nacp_cu03" & (!is.na(nacp_cu01) | !is.na(nacp_cu02)), "confined",
+           ifelse(aquifer == "nacp_aq04p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)), "confined",
+           ifelse(aquifer == "nacp_cu04" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)), "confined", 
+           ifelse(aquifer == "nacp_aq05a" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04)), "confined", 
+           ifelse(aquifer == "nacp_cu05" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04)), "confined", 
+           ifelse(aquifer == "nacp_aq06m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05)), "confined",
+           ifelse(aquifer == "nacp_cu06" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05)), "confined", 
+           ifelse(aquifer == "nacp_aq07m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06)), "confined",
+           ifelse(aquifer == "nacp_cu07" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06)), "confined",
+           ifelse(aquifer == "nacp_aq08m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07)), "confined",
+           ifelse(aquifer == "nacp_cu08" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07)), "confined",
+           ifelse(aquifer == "nacp_aq09p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
                     !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
-                   |!is.na(nacp_cu08), "13confined",
-           fifelse(aquifer == "nacp_cu09" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                   |!is.na(nacp_cu08)), "confined",
+           ifelse(aquifer == "nacp_cu09" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
                     !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
-                   |!is.na(nacp_cu08), "14confined",
-           fifelse(aquifer == "nacp_aq10_p" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                   |!is.na(nacp_cu08)), "confined",
+           ifelse(aquifer == "nacp_aq10p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
                     !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
-                   |!is.na(nacp_cu08) | !is.na(nacp_cu09), "15confined",
-           fifelse(aquifer == "nacp_cu10b" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                   |!is.na(nacp_cu08) | !is.na(nacp_cu09)), "confined",
+           ifelse(aquifer == "nacp_cu10b" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
                     !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
-                   |!is.na(nacp_cu08) | !is.na(nacp_cu09), "16confined",
-                  "finalunconfined", na = NA))))))))))))))))))))
+                   |!is.na(nacp_cu08) | !is.na(nacp_cu09)), "confined",
+                  "unconfined")))))))))))))))))))))
 
-# case_when 
-
-#fifelse 
-
-confined_criteria_mod4 <- nacp_class_mod %>% 
-  rowwise() %>% 
-  mutate(status = 
-           case_when(aquifer %in% c("surf", "nacp_cu01") ~"topunconfined",
-                     aquifer == "nacp_aq02u" & !is.na(nacp_cu01) ~"2confined",
-                      aquifer == "nacp_cu02" & !is.na(nacp_cu01) ~"cu2confined", 
-                      aquifer == "nacp_aq03l" & (!is.na(nacp_cu01) | !is.na(nacp_cu02)) ~"3confined",
-                      aquifer == "nacp_cu03" & (!is.na(nacp_cu01) | !is.na(nacp_cu02)) ~"cu3confined",
-                      aquifer == "nacp_aq04p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)) ~"4confined",
-                      aquifer == "nacp_cu04" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)) ~"cu4confined", 
-                      aquifer == "nacp_aq05a" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04)) ~"5confined", 
-                      aquifer == "nacp_cu05" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04)) ~"cu5confined", 
-                      aquifer == "nacp_aq06m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05)) ~"6confined",
-                      aquifer == "nacp_cu06" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)  | !is.na(nacp_cu04) | !is.na(nacp_cu05)) ~"cu6confined", 
-                      aquifer == "nacp_aq07m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06)) ~"7confined",
-                      aquifer == "nacp_cu07" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06)) ~"cu7confined",
-                      aquifer == "nacp_aq08m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07)) ~"8confined",
-                      aquifer == "nacp_cu08" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07)) ~"cu8confined",
-                      aquifer == "nacp_aq09p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) |!is.na(nacp_cu08)) ~"9confined",
-                      aquifer == "nacp_cu09" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) |!is.na(nacp_cu08)) ~"cu9confined",
-                      aquifer == "nacp_aq10p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
-                                  |!is.na(nacp_cu08) | !is.na(nacp_cu09)) ~"10confined",
-                      aquifer == "nacp_cu10b" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
-                                  |!is.na(nacp_cu08) | !is.na(nacp_cu09)) ~"cu10confined", TRUE ~"finalunconfined"))
-
-
-test_halp <- nacp_class_mod %>% 
-  rowwise() %>% 
-  mutate(testing = 
-           ifelse(aquifer == "nacp_aq03l" & is.na(nacp_cu01) | is.na(nacp_cu02), "confined", 
-                  ifelse(aquifer == "nacp_cu03" & !is.na(nacp_cu01) | !is.na(nacp_cu02),
-                                 "confined", 
-                  ifelse(aquifer == "nacp_aq04p" & !is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03), "confined", "unconfined"))))
-
-
-
-confining_units <- list("nacp_cu01", "nacp_cu02", "nacp_cu03", "nacp_cu04", "nacp_cu05", "nacp_cu06", 
-                          "nacp_cu07", "nacp_cu08", "nacp_cu09")
-other_units <- list("nacp_aq02u", "nacp_aq03l", "nacp_aq04p", "nacp_aq05a", "nacp_aq06m", "nacp_aq07m", 
-                      "nacp_aq08m", "nacp_aq09p", "nacp_aq10p", "nacp_cu10b")
-
-all_units <- list("nacp_aq02u", "nacp_aq03l", "nacp_aq04p", "nacp_aq05a", "nacp_aq06m", "nacp_aq07m", 
-                    "nacp_aq08m", "nacp_aq09p", "nacp_aq10p", "nacp_cu10b", "nacp_cu01", "nacp_cu02", 
-                    "nacp_cu03", "nacp_cu04", "nacp_cu05", "nacp_cu06", "nacp_cu07", "nacp_cu08", "nacp_cu09")
-
-
-test_mod <- nacp_class_mod %>% 
-  rowwise() %>% 
-  mutate(status = 
-           ifelse(is.na(aquifer), NA, 
-                  ifelse(aquifer %in% c("nacp_cu01", "surf"), "unconfined", 
-                  ifelse(aquifer %in% all_units & !is.na(confining_units), "confined", "unconfined"))))
-
-test_mod <- nacp_class_mod %>% 
-  rowwise() %>% 
-  mutate(sum_thick = sum(abs(nacp_cu01), abs(nacp_cu02), abs(nacp_cu03), abs(nacp_cu04), abs(nacp_cu05),
-                         abs(nacp_cu06), abs(nacp_cu07), abs(nacp_cu08), abs(nacp_cu09), na.rm = TRUE)) %>% 
-  mutate(status = 
-           ifelse(is.na(aquifer), NA, 
-                  ifelse(aquifer %in% c("nacp_cu01", "surf"), "unconfined", 
-                  ifelse(aquifer %in% all_units &  sum_thick > 0, "confined", "unconfined"))))
-
-
+summary_mod <- confined_criteria_mod %>% 
+  count(status)
 ```
 
 #### 1900 Data
@@ -613,21 +486,51 @@ Just confining unit above
 ```{r}
 # Confining unit criteria 
 # Must have confining unit above to be considered a confined well 
-# Can include confining units (except the uppermost, VKBG) 
+# Can include confining units (except the uppermost) 
 
-confined_criteria_1900 <- me_class_1900 %>% 
+confined_criteria_1900 <- nacp_class_1900 %>% 
   rowwise() %>% 
   mutate(status = 
            ifelse(is.na(aquifer), NA,
-           ifelse(aquifer %in% c("mrva", "vkbg"), "unconfined", 
-           ifelse(aquifer == "ucaq" & is.na(vkbg_surf_1), "unconfined",
-           ifelse(aquifer == "mccu" & is.na(vkbg_surf_1), "unconfined", 
-           ifelse(aquifer == "mcaq" & !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined",
-           ifelse(aquifer == "lccu" & !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined",
-           ifelse(aquifer == "lcaq" & !is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined",
-           ifelse(aquifer == "mwaq" & !is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined", 
-           ifelse(aquifer == "lwaq" & !is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined", 
-           ifelse(aquifer == "mdwy" & !is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined", "unconfined")))))))))))
+           ifelse(aquifer %in% c("surf", "nacp_cu01"), "unconfined", 
+           ifelse(aquifer == "nacp_aq02u" & !is.na(nacp_cu01), "confined",
+           ifelse(aquifer == "nacp_cu02" & !is.na(nacp_cu01), "confined", 
+           ifelse(aquifer == "nacp_aq03l" & (!is.na(nacp_cu01) | !is.na(nacp_cu02)), "confined",
+           ifelse(aquifer == "nacp_cu03" & (!is.na(nacp_cu01) | !is.na(nacp_cu02)), "confined",
+           ifelse(aquifer == "nacp_aq04p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)), "confined",
+           ifelse(aquifer == "nacp_cu04" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)), "confined", 
+           ifelse(aquifer == "nacp_aq05a" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04)), "confined", 
+           ifelse(aquifer == "nacp_cu05" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04)), "confined", 
+           ifelse(aquifer == "nacp_aq06m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05)), "confined",
+           ifelse(aquifer == "nacp_cu06" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05)), "confined", 
+           ifelse(aquifer == "nacp_aq07m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06)), "confined",
+           ifelse(aquifer == "nacp_cu07" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06)), "confined",
+           ifelse(aquifer == "nacp_aq08m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07)), "confined",
+           ifelse(aquifer == "nacp_cu08" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07)), "confined",
+           ifelse(aquifer == "nacp_aq09p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
+                   |!is.na(nacp_cu08)), "confined",
+           ifelse(aquifer == "nacp_cu09" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
+                   |!is.na(nacp_cu08)), "confined",
+           ifelse(aquifer == "nacp_aq10p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
+                   |!is.na(nacp_cu08) | !is.na(nacp_cu09)), "confined",
+           ifelse(aquifer == "nacp_cu10b" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) |
+                    !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) 
+                   |!is.na(nacp_cu08) | !is.na(nacp_cu09)), "confined",
+                  "unconfined")))))))))))))))))))))
+
+summary_1900 <- confined_criteria_1900 %>% 
+  count(status)
 
 ```
 
@@ -638,7 +541,7 @@ confined_criteria_1900 <- me_class_1900 %>%
 ```{r}
 # Check to see accuracy of confined/unconfined 
 
-me_modern_check <- confined_criteria_mod %>% 
+nacp_modern_check <- confined_criteria_mod %>% 
   rowwise() %>% 
   mutate(check =
            ifelse(status == "confined" & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "true_c", 
@@ -650,18 +553,18 @@ me_modern_check <- confined_criteria_mod %>%
                                                   NA)))))))
 
 # Summary 
-summary_check <- me_modern_check %>% 
+summary_check <- nacp_modern_check %>% 
   group_by(check) %>% 
   count(check)
 
-# Checked wrong data (commented out)
+# Checked wrong data spatial spread in ArcGIS (commented out)
 
 # Isolate wrong confined 
 
-# confined_wrong <- me_modern_check %>% 
-#   filter(check == "wrong_c")
-# 
-# write_tsv(confined_wrong, here::here("output_data", "me", "confined_wrong.txt"))
+confined_wrong <- nacp_modern_check %>%
+  filter(check == "wrong_c")
+
+write_tsv(confined_wrong, here::here("output_data", "nacp", "confined_wrong.txt"))
 
 ```
 
@@ -678,6 +581,10 @@ error_table <- summary_check %>%
 
 To count confined, unconfined, artesian by aquifer unit 
 
+Make nice final table
+
+#### Modern Data 
+
 ```{r}
 # Final summaries of "correct" data 
 
@@ -685,7 +592,7 @@ To count confined, unconfined, artesian by aquifer unit
 
 # Confined/unconfined and artesian by aquifer unit
 
-summary_mod_final_art <- me_modern_check %>% 
+summary_mod_final_art <- nacp_modern_check %>% 
   filter(!check %in% c("wrong_uc", "wrong_c")) %>% 
   group_by(aquifer, status, artesian) %>% 
   count(aquifer) %>% 
@@ -695,12 +602,36 @@ summary_mod_final_art <- me_modern_check %>%
 
 mod_final_wide <- pivot_wider(summary_mod_final_art, 
                           names_from = c(status, artesian), 
-                          values_from = n) 
+                          values_from = n) %>% 
+  mutate(total_n = rowSums(across(where(is.numeric)), na.rm = T)) %>% 
+  mutate(total_c = rowSums(across(confined_0:confined_1), na.rm = T)) %>% 
+  rowwise() %>% 
+  mutate(per_c = (total_c / total_n) *100) %>% 
+  mutate(per_art = (confined_1 / total_c) *100)
+
+# Tidy the table 
+
+mod_final_table <- mod_final_wide %>% 
+  select(aquifer, total_n, total_c, per_c, confined_1, per_art, confined_0) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate_if(is.numeric, round, digits = 2) %>% 
+  unite(confined_wells, c("total_c", "per_c"), sep = "  |  ") %>% 
+  unite(artesian_wells, c("confined_1", "per_art"), sep = "  |  ") %>% 
+  rename("Aquifer Units" = "aquifer", 
+         "N wells" = "total_n", 
+         "Number of wells defined as confined" = "confined_wells", 
+         "Artesian confined flowing wells" = "artesian_wells",
+         "Not artesian" = "confined_0") 
+
 
 # Write to file 
-write_csv(mod_final_wide, here::here("output_data", "me", "mod_final_table.txt"))
+write_csv(mod_final_table, here::here("output_data", "nacp", "mod_final_table.txt"))
   
+```
 
+#### 1900s Data 
+
+```{r}
 # 1900s data
 
 # Confined/unconfined by aquifer unit 
@@ -712,10 +643,29 @@ summary_1900_final <- confined_criteria_1900 %>%
 
 early1900s_final_wide <- pivot_wider(summary_1900_final, 
                           names_from = c(status, artesian), 
-                          values_from = n) 
+                          values_from = n) %>% 
+  mutate(total_n = rowSums(across(where(is.numeric)), na.rm = T)) %>% 
+  rowwise() %>% 
+  mutate(total_c = sum(c(confined_0, confined_1), na.rm = T)) %>% 
+  mutate(per_c = (total_c / total_n) *100) %>% 
+  mutate(per_art = (confined_1 / total_c) *100)
+
+# Tidy the table 
+
+early1900s_final_table <- early1900s_final_wide %>% 
+  select(aquifer, total_n, total_c, per_c, confined_1, per_art, confined_0) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate_if(is.numeric, round, digits = 2) %>% 
+  unite(confined_wells, c("total_c", "per_c"), sep = "  |  ") %>% 
+  unite(artesian_wells, c("confined_1", "per_art"), sep = "  |  ") %>% 
+  rename("Aquifer Units" = "aquifer", 
+         "N wells" = "total_n", 
+         "Number of wells defined as confined" = "confined_wells", 
+         "Artesian confined flowing wells" = "artesian_wells",
+         "Not artesian" = "confined_0") 
 
 # Write to file 
-write_csv(early1900s_final_wide, here::here("output_data", "me", "early1900s_final_table.txt"))
+write_csv(early1900s_final_table, here::here("output_data", "nacp", "early1900s_final_table.txt"))
 
 ```
 
@@ -723,7 +673,7 @@ Fraction of confined wells to depth
 
 ```{r}
 # Data frame for plots 
-ggplot_modern <- me_modern_check %>% 
+ggplot_modern <- nacp_modern_check %>% 
   filter(!check %in% c("wrong_c", "wrong_uc")) %>% 
   filter(!is.na(check))
 
@@ -735,6 +685,7 @@ ggplot(ggplot_modern,
   geom_violin()
 
 ```
+
 Can't figure out binning...how can this be so hard? (05/02/22) 
 
 ```{r}
@@ -780,19 +731,60 @@ Can't figure out binning...how can this be so hard? (05/02/22)
 # All aquifers that are confined by our criteria, excluding "incorrect" ones (Modern) with USGS correction 
 
 # Modern wells 
-me_confined_mod <- me_modern_check %>% 
+nacp_confined_mod <- nacp_modern_check %>% 
   filter(check %in% c("true_c", "no_data_c")) %>% 
   mutate(artesian = 
            ifelse(median < 0, 1, 0))
 
 # Write as tsv 
-write_csv(me_confined_mod, here::here("output_data", "me", "me_confined_mod.txt"))
+write_csv(nacp_confined_mod, here::here("output_data", "nacp", "nacp_confined_mod.txt"))
 
 # 1900 data 
-me_confined_1900 <- confined_criteria_1900 %>% 
+nacp_confined_1900 <- confined_criteria_1900 %>% 
   filter(status == "confined") 
 
 # Write as tsv 
-write_csv(me_confined_1900, here::here("output_data", "me", "me_confined_historical.txt"))
+write_csv(nacp_confined_1900, here::here("output_data", "nacp", "nacp_confined_historical.txt"))
 
 ```
+
+
+--------------------------------------------------------------
+ARCHIVED CODE 
+--------------------------------------------------------------
+
+### Commented out, other method for analysis (ifelse and case_when work the same)
+
+<!-- ```{r} -->
+
+<!-- <!-- # confined_criteria_mod4 <- nacp_class_mod %>% --> -->
+<!-- <!-- #   rowwise() %>% --> -->
+<!-- <!-- #   mutate(status = --> -->
+<!-- <!-- #            case_when(is.na(aquifer) ~"NA", --> -->
+<!-- <!-- #                       aquifer %in% c("surf", "nacp_cu01") ~"topunconfined", --> -->
+<!-- <!-- #                       aquifer == "nacp_aq02u" & !is.na(nacp_cu01) ~"2confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_cu02" & !is.na(nacp_cu01) ~"cu2confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_aq03l" & (!is.na(nacp_cu01) | !is.na(nacp_cu02)) ~"3confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_cu03" & (!is.na(nacp_cu01) | !is.na(nacp_cu02)) ~"cu3confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_aq04p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)) ~"4confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_cu04" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)) ~"cu4confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_aq05a" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04)) ~"5confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_cu05" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04)) ~"cu5confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_aq06m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05)) ~"6confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_cu06" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)  | !is.na(nacp_cu04) | !is.na(nacp_cu05)) ~"cu6confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_aq07m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06)) ~"7confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_cu07" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06)) ~"cu7confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_aq08m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07)) ~"8confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_cu08" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07)) ~"cu8confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_aq09p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) |!is.na(nacp_cu08)) ~"9confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_cu09" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) |!is.na(nacp_cu08)) ~"cu9confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_aq10p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) --> -->
+<!-- <!-- #                                   |!is.na(nacp_cu08) | !is.na(nacp_cu09)) ~"10confined", --> -->
+<!-- <!-- #                       aquifer == "nacp_cu10b" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) --> -->
+<!-- <!-- #                                   |!is.na(nacp_cu08) | !is.na(nacp_cu09)) ~"cu10confined", TRUE ~"finalunconfined")) --> -->
+<!-- <!-- # --> -->
+<!-- <!-- # summary_casewhen <- confined_criteria_mod4 %>% --> -->
+<!-- <!-- #   count(status) --> -->
+
+<!-- ``` -->
+
