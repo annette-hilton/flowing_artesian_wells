@@ -654,7 +654,7 @@ write_csv(early1900s_final_table, here::here("output_data", "nacp", "early1900s_
 
 # Display knitted table 
 
-kable(early1900s_final_table, caption = "Table 1. Early 1900s confined and artesian wells of the North Atlantic Coastal Plain")
+kable(early1900s_final_table, caption = "Table 2. Early 1900s confined and artesian wells of the North Atlantic Coastal Plain")
 ```
 ### Visualization 
 

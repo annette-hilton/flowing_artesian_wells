@@ -38,20 +38,20 @@ options(scipen=999)
 
 # Overview of the Floridan Aquifer System 
 
-```{r, fig.cap= 'Floridan Aquifer System aerial extent (Williams and Kuniansky, 2015)', fig.align='center', output.width= "200px", echo= FALSE}
+```{r, fig.cap= 'Figure 1. Floridan Aquifer System aerial extent (Williams and Kuniansky, 2015)', fig.align='center', output.width= "200px", echo= FALSE}
 
 knitr::include_graphics(here::here("images", "fl_aerial.png"))
 
 ```
 
-```{r, fig.cap= 'Floridan Aquifer System cross section view (Williams and Kuniansky, 2015)', fig.align='center', output.width= "200px", echo= FALSE}
+```{r, fig.cap= 'Figure 2. Floridan Aquifer System cross section view (Williams and Kuniansky, 2015)', fig.align='center', output.width= "200px", echo= FALSE}
 
 knitr::include_graphics(here::here("images", "fl_hydro.png"))
 
 ```
 
 
-```{r, fig.cap= 'Floridan Aquifer System hydrological units (Williams and Kuniansky, 2015)', fig.align='center', output.width= "200px", echo= FALSE}
+```{r, fig.cap= 'Figure 3. Floridan Aquifer System hydrological units (Williams and Kuniansky, 2015)', fig.align='center', output.width= "200px", echo= FALSE}
 
 knitr::include_graphics(here::here("images", "fl_hydro2.png"))
 
@@ -498,6 +498,13 @@ write_csv(mod_final_table, here::here("output_data", "fl", "mod_final_table.txt"
   
 ```
 
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(mod_final_table, caption = "Table 1. Modern (2010-2021) confined and artesian wells of the Floridan Aquifer System")
+```
+
 #### 1900s Data 
 
 ```{r}
@@ -538,8 +545,17 @@ early1900s_final_table <- early1900s_final_wide %>%
 write_csv(early1900s_final_table, here::here("output_data", "fl", "early1900s_final_table.txt"))
 
 ```
+```{r echo = FALSE, results = 'asis'}
 
-Fraction of confined wells to depth 
+# Display knitted table 
+
+kable(early1900s_final_table, caption = "Table 2. Early 1900s confined and artesian wells of the Floridan Aquifer System")
+```
+
+### Visualization 
+
+Confined and unconfined well depth 
+
 
 ```{r}
 # Data frame for plots 

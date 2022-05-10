@@ -38,13 +38,13 @@ options(scipen=999)
 
 # Overview of the Roswell Artesian Basin 
 
-```{r, fig.cap= 'Roswell Artesian Basin aerial extent (Land and Newton, 2008)', fig.align='center', output.width= "200px", echo= FALSE}
+```{r, fig.cap= 'Figure 1. Roswell Artesian Basin aerial extent (Land and Newton, 2008)', fig.align='center', output.width= "200px", echo= FALSE}
 
 knitr::include_graphics(here::here("images", "roswell_aerial.png"))
 
 ```
 
-```{r, fig.cap= 'Roswell Artesian Basin cross section (Land and Newton, 2008)', fig.align='center', output.width= "400px", echo= FALSE}
+```{r, fig.cap= 'Figure 2. Roswell Artesian Basin cross section (Land and Newton, 2008)', fig.align='center', output.width= "400px", echo= FALSE}
 
 knitr::include_graphics(here::here("images", "roswell_cross_section.png"))
 
@@ -350,7 +350,7 @@ write_csv(early1900s_final_table, here::here("output_data", "roswell", "early190
 
 # Display knitted table 
 
-kable(early1900s_final_table, caption = "Table 1. Early 1900s confined and artesian wells of the Roswell Artesian Basin")
+kable(early1900s_final_table, caption = "Table 2. Early 1900s confined and artesian wells of the Roswell Artesian Basin")
 ```
 
 Fraction of confined wells to depth 

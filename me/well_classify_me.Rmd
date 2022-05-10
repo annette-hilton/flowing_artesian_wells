@@ -39,6 +39,19 @@ library(knitr)
 options(scipen=999)
 ```
 
+# Overview of Mississippi Embayment 
+
+```{r, fig.cap= 'Figure 1. Mississippi Embayment aerial extent (Clark et al., 2011)', fig.align='center', output.width= "200px", echo= FALSE}
+
+knitr::include_graphics(here::here("images", "me_aerial.png"))
+
+```
+```{r, fig.cap= 'Figure 2. Mississippi Embayment aerial extent (Hart et al., 2008)', fig.align='center', output.width= "200px", echo= FALSE}
+
+knitr::include_graphics(here::here("images", "me_cross_section.png"))
+
+```
+
 ## ArcGIS Data Analysis
 
 The following steps were performed in ArcGIS:
@@ -412,7 +425,7 @@ write_csv(early1900s_final_table, here::here("output_data", "me", "early1900s_fi
 
 # Display knitted table 
 
-kable(early1900s_final_table, caption = "Table 1. Early 1900s confined and artesian wells of the Mississippi Embayment")
+kable(early1900s_final_table, caption = "Table 2. Early 1900s confined and artesian wells of the Mississippi Embayment")
 ```
 
 ### Visualization 
