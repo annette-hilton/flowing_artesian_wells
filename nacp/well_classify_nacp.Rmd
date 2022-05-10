@@ -2,7 +2,9 @@
 title: "NACP Project--Well Classification"
 author: "Annette Hilton"
 date: "05/03/2022"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -30,6 +32,7 @@ library(here)
 library(janitor)
 library(naniar)
 library(data.table)
+library(knitr)
 
 # Disable scientific notation 
 
@@ -38,19 +41,19 @@ options(scipen=999)
 
 # Overview of North Atlantic Coastal Plain Aquifer System 
 
-```{r, fig.cap= 'North Atlantic Coastal Plain Aquifer System aerial extent (Masterson et al., 2016)', fig.align='center', output.width= "200px", echo= FALSE}
+```{r, fig.cap= 'Figure 1. North Atlantic Coastal Plain Aquifer System aerial extent (Masterson et al., 2016)', fig.align='center', output.width= "200px", echo= FALSE}
 
 knitr::include_graphics(here::here("images", "nacp_map.png"))
 
 ```
 
-```{r, fig.cap= 'North Atlantic Coastal Plain Aquifer System aquifer units (Masterson et al., 2016)', fig.align='center', output.width= "200px", echo= FALSE}
+```{r, fig.cap= 'Figure 2. North Atlantic Coastal Plain Aquifer System aquifer units (Masterson et al., 2016)', fig.align='center', output.width= "200px", echo= FALSE}
 
 knitr::include_graphics(here::here("images", "nacp_hydro.png"))
 
 ```
 
-```{r, fig.cap= 'North Atlantic Coastal Plain Aquifer System hydrogeological GIS layers (Pope et al., 2016)', fig.align='center', output.width= "200px", echo= FALSE}
+```{r, fig.cap= 'Figure 3. North Atlantic Coastal Plain Aquifer System hydrogeological GIS layers (Pope et al., 2016)', fig.align='center', output.width= "200px", echo= FALSE}
 
 knitr::include_graphics(here::here("images", "nacp_hydro2.png"))
 
@@ -210,33 +213,6 @@ nacp_analysis_1900 <- nacp_early1900s_fromarc %>%
 ```
 
 #### Classify each well to an aquifer unit 
-
-Process: 
-
-If well bottom is greater than second unit (top), then it falls within the first unit (second unit top is the bottom of the first unit). 
-
-Well bottom < nacp_aq01s & well bottom > max(nacp_cu01:nacp_cu10b) = “nacp_aq01s”
-Well bottom < nacp_cu01 & well bottom > max(nacp_aq02u:nacp_cu10b) = “nacp_cu01”
-Well bottom < nacp_aq02u & well bottom > max(nacp_cu02:nacp_cu10b) = “nacp_aq02u”
-Well bottom < nacp_cu02 & well bottom > max(nacp_aq03l:nacp_cu10b) = “nacp_cu02” 
-Well bottom < nacp_aq03l & well bottom > max(nacp_cu03:nacp_cu10b) = “nacp_aq03l”
-Well bottom < nacp_cu03 & well bottom > max(nacp_aq04p:nacp_cu10b) = “nacp_cu03”
-Well bottom < nacp_aq04p & well bottom > max(nacp_cu04:nacp_cu10b) = “nacp_aq04p” 
-Well bottom < nacp_cu04 & well bottom > max(nacp_aq05a:nacp_cu10b) = “nacp_cu04” 
-Well bottom < nacp_aq05a & well bottom > max(nacp_cu05:nacp_cu10b) = “nacp_aq05a” 
-Well bottom < nacp_cu05 & well bottom > max(nacp_aq06m:nacp_cu10b) = “nacp_cu05” 
-Well bottom < nacp_aq06m & well bottom > max(nacp_cu06:nacp_cu10b) = “nacp_aq06m” 
-Well bottom < nacp_cu06 & well bottom > max(nacp_aq07m:nacp_cu10b) = “nacp_cu06”
-Well bottom < nacp_aq07m & well bottom > max(nacp_cu07:nacp_cu10b) = “nacp_aq07m” 
-Well bottom < nacp_cu07 & well bottom > max(nacp_aq08m:nacp_cu10b) = “nacp_cu07”
-Well bottom < nacp_aq08m & well bottom > max(nacp_cu08:nacp_cu10b) = “nacp_aq08m”  
-Well bottom < nacp_cu08 & well bottom > max(nacp_aq09p:nacp_cu10b) = “nacp_cu08”
-Well bottom < nacp_aq09p & well bottom > max(nacp_cu09:nacp_cu10b) = “nacp_aq09p”
-Well bottom < nacp_cu09 & well bottom > max(nacp_aq10p:nacp_cu10b) = “nacp_cu09”
-Well bottom < nacp_aq10p & well bottom > nacp_cu10b = “nacp_aq10p”  
-Well bottom < nacp_cu10b = “nacp_cu10b” 
-
-
 
 ```{r}
 # Code for assigning each well to an aquifer unit 
@@ -425,7 +401,7 @@ nacp_class_1900 <- nacp_analysis_1900 %>%
 
 ### Separate each aquifer/unit and confined
 
-#### Modern Data
+##### Modern Data
 
 Just confining unit above
 
@@ -479,7 +455,7 @@ summary_mod <- confined_criteria_mod %>%
   count(status)
 ```
 
-#### 1900 Data
+##### 1900 Data
 
 Just confining unit above
 
@@ -536,7 +512,7 @@ summary_1900 <- confined_criteria_1900 %>%
 
 ### Accuracy check with USGS Confined/Unconfined 
 
-#### Modern data only 
+##### Modern data only 
 
 ```{r}
 # Check to see accuracy of confined/unconfined 
@@ -577,13 +553,9 @@ error_table <- summary_check %>%
 
 ```
 
-### Make summary tables 
+### Summary tables 
 
-To count confined, unconfined, artesian by aquifer unit 
-
-Make nice final table
-
-#### Modern Data 
+##### Modern Data 
 
 ```{r}
 # Final summaries of "correct" data 
@@ -629,7 +601,15 @@ write_csv(mod_final_table, here::here("output_data", "nacp", "mod_final_table.tx
   
 ```
 
-#### 1900s Data 
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(mod_final_table, caption = "Table 1. Modern (2010-2021) confined and artesian wells of the North Atlantic Coastal Plain")
+```
+
+
+##### 1900s Data 
 
 ```{r}
 # 1900s data
@@ -669,7 +649,16 @@ write_csv(early1900s_final_table, here::here("output_data", "nacp", "early1900s_
 
 ```
 
-Fraction of confined wells to depth 
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(early1900s_final_table, caption = "Table 1. Early 1900s confined and artesian wells of the North Atlantic Coastal Plain")
+```
+### Visualization 
+
+Confined and unconfined well depth 
 
 ```{r}
 # Data frame for plots 
@@ -747,44 +736,4 @@ nacp_confined_1900 <- confined_criteria_1900 %>%
 write_csv(nacp_confined_1900, here::here("output_data", "nacp", "nacp_confined_historical.txt"))
 
 ```
-
-
---------------------------------------------------------------
-ARCHIVED CODE 
---------------------------------------------------------------
-
-### Commented out, other method for analysis (ifelse and case_when work the same)
-
-<!-- ```{r} -->
-
-<!-- <!-- # confined_criteria_mod4 <- nacp_class_mod %>% --> -->
-<!-- <!-- #   rowwise() %>% --> -->
-<!-- <!-- #   mutate(status = --> -->
-<!-- <!-- #            case_when(is.na(aquifer) ~"NA", --> -->
-<!-- <!-- #                       aquifer %in% c("surf", "nacp_cu01") ~"topunconfined", --> -->
-<!-- <!-- #                       aquifer == "nacp_aq02u" & !is.na(nacp_cu01) ~"2confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_cu02" & !is.na(nacp_cu01) ~"cu2confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_aq03l" & (!is.na(nacp_cu01) | !is.na(nacp_cu02)) ~"3confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_cu03" & (!is.na(nacp_cu01) | !is.na(nacp_cu02)) ~"cu3confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_aq04p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)) ~"4confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_cu04" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)) ~"cu4confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_aq05a" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04)) ~"5confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_cu05" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04)) ~"cu5confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_aq06m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05)) ~"6confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_cu06" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03)  | !is.na(nacp_cu04) | !is.na(nacp_cu05)) ~"cu6confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_aq07m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06)) ~"7confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_cu07" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06)) ~"cu7confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_aq08m" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07)) ~"8confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_cu08" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07)) ~"cu8confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_aq09p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) |!is.na(nacp_cu08)) ~"9confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_cu09" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) |!is.na(nacp_cu08)) ~"cu9confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_aq10p" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) --> -->
-<!-- <!-- #                                   |!is.na(nacp_cu08) | !is.na(nacp_cu09)) ~"10confined", --> -->
-<!-- <!-- #                       aquifer == "nacp_cu10b" & (!is.na(nacp_cu01) | !is.na(nacp_cu02) | !is.na(nacp_cu03) | !is.na(nacp_cu04) | !is.na(nacp_cu05) | !is.na(nacp_cu06) | !is.na(nacp_cu07) --> -->
-<!-- <!-- #                                   |!is.na(nacp_cu08) | !is.na(nacp_cu09)) ~"cu10confined", TRUE ~"finalunconfined")) --> -->
-<!-- <!-- # --> -->
-<!-- <!-- # summary_casewhen <- confined_criteria_mod4 %>% --> -->
-<!-- <!-- #   count(status) --> -->
-
-<!-- ``` -->
 

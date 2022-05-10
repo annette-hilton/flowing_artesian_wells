@@ -29,10 +29,25 @@ library(tidyverse)
 library(here)
 library(janitor)
 library(naniar)
+library(knitr)
 
 # Disable scientific notation 
 
 options(scipen=999)
+```
+
+# Overview of the Roswell Artesian Basin 
+
+```{r, fig.cap= 'Roswell Artesian Basin aerial extent (Land and Newton, 2008)', fig.align='center', output.width= "200px", echo= FALSE}
+
+knitr::include_graphics(here::here("images", "roswell_aerial.png"))
+
+```
+
+```{r, fig.cap= 'Roswell Artesian Basin cross section (Land and Newton, 2008)', fig.align='center', output.width= "400px", echo= FALSE}
+
+knitr::include_graphics(here::here("images", "roswell_cross_section.png"))
+
 ```
 
 ## ArcGIS Data Analysis 
@@ -261,26 +276,35 @@ mod_final_wide <- pivot_wider(summary_mod_final_art,
   mutate(per_c = (total_c / total_n) *100) %>% 
   mutate(per_art = 0)
 
-# # Tidy the table 
-# 
-# mod_final_table <- mod_final_wide %>% 
-#   select(aquifer, total_n, total_c, per_c, per_art, confined_0) %>% 
-#   replace(is.na(.), 0) %>% 
-#   mutate_if(is.numeric, round, digits = 2) %>% 
-#   unite(confined_wells, c("total_c", "per_c"), sep = "  |  ") %>% 
-#   unite(artesian_wells, c("confined_1", "per_art"), sep = "  |  ") %>% 
-#   rename("Aquifer Units" = "aquifer", 
-#          "N wells" = "total_n", 
-#          "Number of wells defined as confined" = "confined_wells", 
-#          "Artesian confined flowing wells" = "artesian_wells",
-#          "Not artesian" = "confined_0") 
-# 
-# 
-# # Write to file 
-# write_csv(mod_final_table, here::here("output_data", "fl", "mod_final_table.txt"))
+# Tidy the table
+
+mod_final_table <- mod_final_wide %>%
+  select(aquifer, total_n, total_c, per_c, per_art, confined_0) %>%
+  replace(is.na(.), 0) %>%
+  mutate_if(is.numeric, round, digits = 2) %>% 
+  mutate(confined_1 = 0) %>% 
+  unite(confined_wells, c("total_c", "per_c"), sep = "  |  ") %>%
+  unite(artesian_wells, c("confined_1", "per_art"), sep = "  |  ") %>%
+  rename("Aquifer Units" = "aquifer",
+         "N wells" = "total_n",
+         "Number of wells defined as confined" = "confined_wells",
+         "Artesian confined flowing wells" = "artesian_wells",
+         "Not artesian" = "confined_0")
+
+
+# Write to file
+write_csv(mod_final_table, here::here("output_data", "roswell", "mod_final_table.txt"))
   
 ```
 
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(mod_final_table, caption = "Table 1. Modern (2010-2021) confined and artesian wells of the Roswell Artesian Basin")
+```
+ 
 #### 1900s Data 
 
 ```{r}
@@ -303,23 +327,30 @@ early1900s_final_wide <- pivot_wider(summary_1900_final,
   mutate(per_c = (total_c / total_n) *100) %>% 
   mutate(per_art = (confined_1 / total_c) *100)
 
-# # Tidy the table 
-# 
-# early1900s_final_table <- early1900s_final_wide %>% 
-#   select(aquifer, total_n, total_c, per_c, confined_1, per_art, confined_0) %>% 
-#   replace(is.na(.), 0) %>% 
-#   mutate_if(is.numeric, round, digits = 2) %>% 
-#   unite(confined_wells, c("total_c", "per_c"), sep = "  |  ") %>% 
-#   unite(artesian_wells, c("confined_1", "per_art"), sep = "  |  ") %>% 
-#   rename("Aquifer Units" = "aquifer", 
-#          "N wells" = "total_n", 
-#          "Number of wells defined as confined" = "confined_wells", 
-#          "Artesian confined flowing wells" = "artesian_wells",
-#          "Not artesian" = "confined_0") 
-# 
-# # Write to file 
-# write_csv(early1900s_final_table, here::here("output_data", "fl", "early1900s_final_table.txt"))
+# Tidy the table
 
+early1900s_final_table <- early1900s_final_wide %>%
+  select(aquifer, total_n, total_c, per_c, confined_1, per_art, confined_0) %>%
+  replace(is.na(.), 0) %>%
+  mutate_if(is.numeric, round, digits = 2) %>%
+  unite(confined_wells, c("total_c", "per_c"), sep = "  |  ") %>%
+  unite(artesian_wells, c("confined_1", "per_art"), sep = "  |  ") %>%
+  rename("Aquifer Units" = "aquifer",
+         "N wells" = "total_n",
+         "Number of wells defined as confined" = "confined_wells",
+         "Artesian confined flowing wells" = "artesian_wells",
+         "Not artesian" = "confined_0")
+
+# Write to file
+write_csv(early1900s_final_table, here::here("output_data", "roswell", "early1900s_final_table.txt"))
+
+```
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(early1900s_final_table, caption = "Table 1. Early 1900s confined and artesian wells of the Roswell Artesian Basin")
 ```
 
 Fraction of confined wells to depth 

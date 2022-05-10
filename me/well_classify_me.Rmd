@@ -32,7 +32,7 @@ The purpose of this Rmd is to:
 library(tidyverse)
 library(here)
 library(janitor)
-# library(naniar)
+library(knitr)
 
 # Disable scientific notation 
 
@@ -140,28 +140,6 @@ Process:
 If well bottom is greater than second unit (top), then it falls within
 the first unit (second unit top is the bottom of the first unit).
 
-Theory:
-
-well bottom \> vkbg (first unit) = mrva well bottom \> ucaq (second
-unit) = vkbg (first unit) well bottom \> mccu (third unit) = ucaq
-(second unit) well bottom \> mcaq (fourth unit) = mccu (third unit) well
-bottom \> lccu (fifth unit) = mcaq (fourth unit) well bottom \> lcaq
-(sixth unit) = lccu (fifth unit) well bottom \> mwaq (seventh unit) =
-lcaq (sixth unit) well bottom \> lwaq (eigth unit) = mwaq (seventh unit)
-well bottom \> mdwy (ninth unit) = lwaq (eigth unit) well bottom \< mdwy
-(ninth unit) = mdwy (ninth unit)
-
-Code:
-
-well bottom \< topo_ft & well bottom \> max(vkbg:mdwy) = mrva well
-bottom \< vkbg & well bottom \> max(ucaq:mdwy) = vkbg well bottom \<
-ucaq & well bottom \> max(mccu:mdwy) = ucaq well bottom \< mccu & well
-bottom \> max(mcaq:mdwy) = mccu well bottom \< mcaq & well bottom \>
-max(lccu:mdwy) = mcaq well bottom \< lccu & well bottom \>
-max(lcaq:mdwy) = lccu well bottom \< lcaq & well bottom \>
-max(mwaq:mdwy) = lcaq well bottom \< mwaq & well bottom \>
-max(lwaq:mdwy) = mwaq well bottom \< lwaq & well bottom \> mdwy = lwaq
-well bottom \< mdwy = mdwy
 
 ```{r}
 # Code for assigning each well to an aquifer unit 
@@ -334,9 +312,9 @@ error_table <- summary_check %>%
 
 ```
 
-### Make summary tables 
+### Summary tables 
 
-To count confined, unconfined, artesian by aquifer unit 
+##### Modern Data 
 
 ```{r}
 # Final summaries of "correct" data 
@@ -355,12 +333,43 @@ summary_mod_final_art <- me_modern_check %>%
 
 mod_final_wide <- pivot_wider(summary_mod_final_art, 
                           names_from = c(status, artesian), 
-                          values_from = n) 
+                          values_from = n) %>% 
+  mutate(total_n = rowSums(across(where(is.numeric)), na.rm = T)) %>% 
+  mutate(total_c = rowSums(across(confined_0:confined_1), na.rm = T)) %>% 
+  rowwise() %>% 
+  mutate(per_c = (total_c / total_n) *100) %>% 
+  mutate(per_art = (confined_1 / total_c) *100)
+
+# Tidy the table 
+
+mod_final_table <- mod_final_wide %>% 
+  select(aquifer, total_n, total_c, per_c, confined_1, per_art, confined_0) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate_if(is.numeric, round, digits = 2) %>% 
+  unite(confined_wells, c("total_c", "per_c"), sep = "  |  ") %>% 
+  unite(artesian_wells, c("confined_1", "per_art"), sep = "  |  ") %>% 
+  rename("Aquifer Units" = "aquifer", 
+         "N wells" = "total_n", 
+         "Number of wells defined as confined" = "confined_wells", 
+         "Artesian confined flowing wells" = "artesian_wells",
+         "Not artesian" = "confined_0") 
+
 
 # Write to file 
-write_csv(mod_final_wide, here::here("output_data", "me", "mod_final_table.txt"))
+write_csv(mod_final_table, here::here("output_data", "me", "mod_final_table.txt"))
   
+```
 
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(mod_final_table, caption = "Table 1. Modern (2010-2021) confined and artesian wells of the Mississippi Embayment")
+```
+
+##### 1900s Data 
+
+```{r}
 # 1900s data
 
 # Confined/unconfined by aquifer unit 
@@ -372,14 +381,43 @@ summary_1900_final <- confined_criteria_1900 %>%
 
 early1900s_final_wide <- pivot_wider(summary_1900_final, 
                           names_from = c(status, artesian), 
-                          values_from = n) 
+                          values_from = n) %>% 
+  mutate(total_n = rowSums(across(where(is.numeric)), na.rm = T)) %>% 
+  rowwise() %>% 
+  mutate(total_c = sum(c(confined_0, confined_1), na.rm = T)) %>% 
+  mutate(per_c = (total_c / total_n) *100) %>% 
+  mutate(per_art = (confined_1 / total_c) *100)
+
+# Tidy the table 
+
+early1900s_final_table <- early1900s_final_wide %>% 
+  select(aquifer, total_n, total_c, per_c, confined_1, per_art, confined_0) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate_if(is.numeric, round, digits = 2) %>% 
+  unite(confined_wells, c("total_c", "per_c"), sep = "  |  ") %>% 
+  unite(artesian_wells, c("confined_1", "per_art"), sep = "  |  ") %>% 
+  rename("Aquifer Units" = "aquifer", 
+         "N wells" = "total_n", 
+         "Number of wells defined as confined" = "confined_wells", 
+         "Artesian confined flowing wells" = "artesian_wells",
+         "Not artesian" = "confined_0") 
 
 # Write to file 
-write_csv(early1900s_final_wide, here::here("output_data", "me", "early1900s_final_table.txt"))
+write_csv(early1900s_final_table, here::here("output_data", "me", "early1900s_final_table.txt"))
 
 ```
 
-Fraction of confined wells to depth 
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(early1900s_final_table, caption = "Table 1. Early 1900s confined and artesian wells of the Mississippi Embayment")
+```
+
+### Visualization 
+
+Confined and unconfined well depth 
 
 ```{r}
 # Data frame for plots 
