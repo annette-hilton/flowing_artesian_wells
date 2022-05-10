@@ -57,7 +57,7 @@ The following steps were performed in ArcGIS:
 Hydrogeological data: Arcfile = "tx_classify" (ArcPro)
 
 1.  Hydrogeologic layers (raster files)
-2.  Modern wells from ME (USGS) (processed in Rmd
+2.  Modern wells (USGS) (processed in Rmd
     `modern_data_cleaning.Rmd`) and early 1900s data
     (early1900s_dem_wgs84_final.txt)
 3.  Use tool "Extract multi values to points" to determine well location
@@ -95,7 +95,7 @@ Hydrogeologic Layer Surfaces:
 ### Aquifer analysis 
 
 - Find well bottom 
-- Remove observations that do not fall within TX GCAS (all NAs) 
+- Remove observations that do not fall within aquifer system (all NAs) 
 
 ```{r}
 # Convert `rastervalu` column from meters to feet (conversion: 1 meter = 3.28084 feet)

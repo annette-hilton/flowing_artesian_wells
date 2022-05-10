@@ -1,7 +1,7 @@
 ---
 title: "Modern Well Records (~2010-2020)"
 author: "Annette Hilton"
-date: "11/15/2021"
+date: "05/10/2022"
 output: html_document
 ---
 
@@ -22,6 +22,7 @@ library(janitor)
 library(purrr)
 library(dplyr)
 library(tidyr)
+library(naniar)
 
 
 # Disable scientific notation 
@@ -78,6 +79,7 @@ write_tsv(usgs_modern_med, here::here("output_data", "usgs_modern.txt"))
 dem_usgs_modern <- readr::read_csv(here::here("data", "dem", "dem_usgs_modern.csv"))
 
 ```
+
 ```{r}
 # Modern data 
 # USGS confined/unconfined definitions and aquifer designations
@@ -163,9 +165,60 @@ write_tsv(nacp_modern, here::here("data", "nacp", "nacp_modern.txt"))
 ### Central Valley (California) 
 
 ```{r}
-
+# USGS data 
+cv_modern <- modern_final %>% 
+  filter(id.x == "ca") %>% 
+  clean_names()
 ```
 
+
+```{r}
+# CA drilling wells
+# Source: see `meta_data_read_me.Rmd` 
+
+# Load raw data 
+na_values <- c("-9999.0000000")
+
+ca_drill_raw <- readr::read_csv(here::here("data", "cv", "ca_wells_elv.txt"), na = na_values) 
+
+# Initial tidy
+ca_drill_tidy <- ca_drill_raw %>% 
+  clean_names() %>% 
+  filter(!total_comp == 0) %>% 
+  filter(year >= 2010) %>% 
+  select(wcr_number, decimal_la, decimal_lo, total_comp, static_wat, date_work, year, cali) 
+
+# Make consistent with USGS data to join them 
+ca_drill_tidy_final <- ca_drill_tidy %>% 
+  mutate(id_x = "ca", 
+         artesian =  
+           ifelse(static_wat <= 0, 1, 0)) %>% 
+  mutate(national_aquifer_x = NA, 
+         local_aquifer_x = NA, 
+         code = NA,
+         depth_m_x = NA) %>% 
+  rename(site_no = wcr_number, 
+         dec_lat_va_x = decimal_la, 
+         dec_long_va_x = decimal_lo, 
+         well_depth_va = total_comp, 
+         median = static_wat, 
+         level_date = date_work,
+         level_year = year, 
+         rastervalu = cali) %>% 
+  select(site_no, dec_lat_va_x, dec_long_va_x, well_depth_va, median, level_date, level_year, 
+         id_x, artesian, rastervalu, national_aquifer_x, local_aquifer_x, code, depth_m_x)
+  
+```
+
+```{r}
+# Join USGS and drilling well data 
+
+cv_modern_final <- rbind(ca_drill_tidy_final, cv_modern)
+
+write_tsv(cv_modern_final, here::here("data", "cv", "cv_modern.txt"))
+
+```
+ 
 ### Floridan Aquifer System 
 
 ```{r}
