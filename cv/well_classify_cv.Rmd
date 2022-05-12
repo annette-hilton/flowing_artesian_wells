@@ -167,6 +167,7 @@ cv_class_mod <- cv_analysis_mod %>%
         ifelse(well_bottom < topo_ft & well_bottom > layer4_top, "unconfined", 
         ifelse(well_bottom < layer6_top, "confined", NA)))
 
+
 # 1900 data 
 
 cv_class_1900 <- cv_analysis_1900 %>% 
@@ -175,20 +176,6 @@ cv_class_1900 <- cv_analysis_1900 %>%
         ifelse(well_bottom < topo_ft & well_bottom > layer4_top, "unconfined", 
         ifelse(well_bottom < layer6_top, "confined", NA))) 
 
-```
-
-
-
-
------------------------------------ 5/10/22 left off here -------------------------------------
-
-```{r}
-# confined only 1900 
-
-cv_confined_1900_only <- cv_class_1900 %>% 
-  filter(aquifer == "confined")
-
-write_tsv(cv_confined_1900_only, here::here("output_data", "cv", "cv_conf_1900_only.txt"))
 ```
 
 Summary of wells per aquifer unit 
@@ -201,65 +188,380 @@ summarymod_cv <- cv_class_mod %>%
   group_by(aquifer) %>% 
   count(aquifer) 
 
-
 # 1900s data 
 
 summary1900_cv <- cv_class_1900 %>% 
   group_by(aquifer) %>% 
   count(aquifer)
 
-# join summaries 
-
-full_summary <- summary1900_cv %>% 
-  full_join(summarymod_cv, by = "aquifer") %>% 
-  rename(historical = n.x, 
-         modern = n.y)
 ```
 
-#### Confined Well Criteria 
-
-Confined aquifer unit: 
-
-- Criteria: Must have at least 10 m (33 ft) of confining material above
-- Code: If the aquifer is confined, calculate the sum of the confining unit thickness above (layer4 & layer5). If the sum of the confining unit thickness is >= 33 ft (10m), then "keep" the well. 
+### Separate each aquifer/unit and confined
 
 
-First, determine thickness of aquifer units 
+Confining unit = Corcoran Clay 
+
+Above corcoran clay, unconfined; below corcoran clay, confined. 
 
 ```{r}
-# Thickness of corcoran clay
+# Modern 
 
-# Modern data 
+confined_criteria_mod <- cv_class_mod %>% 
+  rowwise() %>% 
+  mutate(status = 
+           ifelse(aquifer == "confined" & (!is.na(layer4_top) | !is.na(layer5_top) | !is.na(layer6_top)), "confined", 
+           ifelse(aquifer == "unconfined", "unconfined", NA)))
 
-cv_thickness_mod <- cv_class_mod %>% 
-  mutate(
-    corcoran_thick = layer4_top - layer6_top)
+summary_mod <- confined_criteria_mod %>% 
+  count(status)
 
-# 1900 data 
 
-cv_thickness_1900 <- cv_class_1900 %>% 
-  mutate(
-    corcoran_thick = layer4_top - layer6_top)
+# 1900 
+
+confined_criteria_1900 <- cv_class_1900 %>% 
+  rowwise() %>% 
+  mutate(status = 
+           ifelse(aquifer == "confined" & (!is.na(layer4_top) | !is.na(layer5_top) | !is.na(layer6_top)), "confined", 
+           ifelse(aquifer == "unconfined", "unconfined", NA)))
+
+summary_1900 <- confined_criteria_1900 %>% 
+  count(status)
+
+# save (test) confined only 
+
+confined_original_1900 <- confined_criteria_1900 %>% 
+  filter(status == "confined")
+
+write_tsv(confined_original_1900, here::here("output_data", "cv", "confined_1900_original.txt"))
 
 ```
 
-Then, determine cumulative thickness & which wells meet criteria 
+### Accuracy check with USGS Confined/Unconfined 
+
+#### Modern data only 
 
 ```{r}
-# Modern data 
+# Check to see accuracy of confined/unconfined 
 
-cv_cum_thickness_mod <- cv_thickness_mod %>% 
+cv_modern_check <- confined_criteria_mod %>% 
   rowwise() %>% 
-  dplyr::mutate(keep = 
-           ifelse(corcoran_thick >= 33, "keep", NA))
+  mutate(check =
+           ifelse(is.na(status) & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "only_usgs_data_c", 
+           ifelse(is.na(status) & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "only_usgs_data_uc",
+           ifelse(status == "confined" & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "true_c", 
+           ifelse(status == "confined" & is.na(code), "no_data_c", 
+           ifelse(status == "confined" & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "wrong_c", 
+           ifelse(status == "unconfined" & is.na(code), "no_data_uc",
+           ifelse(status == "unconfined" & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "true_uc", 
+           ifelse(status == "unconfined" & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "wrong_uc", 
+            NA)))))))))
 
-# Modern data 
 
-cv_cum_thickness_1900 <- cv_thickness_1900 %>% 
-  rowwise() %>% 
-  dplyr::mutate(keep = 
-           ifelse(corcoran_thick >= 33, "keep", NA))
+# Summary 
+summary_check <- cv_modern_check %>% 
+  group_by(check) %>% 
+  count(check)
+
 ```
+
+
+```{r}
+# Confined USGS right/wrong and testing 
+
+test_confined <- cv_modern_check %>% 
+  filter(check %in% c("true_c", "wrong_c")) %>% 
+  mutate(depth_m_original = well_depth_va / 3.28) %>% 
+  mutate(difference = (abs(layer6_top) - abs(well_bottom))) %>% 
+  group_by(check) %>% 
+  mutate(average_diff = mean(difference), 
+         median_diff = median(difference))
+
+# Add 50 feet criteria for below layer 6 
+
+confined_criteria_mod_50 <- cv_class_mod %>% 
+  rowwise() %>% 
+  mutate(status = 
+           ifelse(aquifer == "confined" & layer6_top > (abs(well_bottom) + 50), "confined", 
+           ifelse(aquifer == "unconfined", "unconfined", NA)))
+
+summary_mod_50 <- confined_criteria_mod_50 %>% 
+  count(status)
+
+# check against USGS 
+
+cv_modern_check_50 <- confined_criteria_mod_50 %>% 
+  rowwise() %>% 
+  mutate(check =
+           ifelse(is.na(status) & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "only_usgs_data_c", 
+           ifelse(is.na(status) & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "only_usgs_data_uc",
+           ifelse(status == "confined" & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "true_c", 
+           ifelse(status == "confined" & is.na(code), "no_data_c", 
+           ifelse(status == "confined" & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "wrong_c", 
+           ifelse(status == "unconfined" & is.na(code), "no_data_uc",
+           ifelse(status == "unconfined" & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "true_uc", 
+           ifelse(status == "unconfined" & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "wrong_uc", 
+            NA)))))))))
+
+summary_check_50 <- cv_modern_check_50 %>% 
+  group_by(check) %>% 
+  count(check)
+
+# Check USGS classifications with well depth 
+
+usgs_only <- cv_modern_check %>% 
+  filter(!is.na(code)) 
+
+ggplot(usgs_only, 
+       aes(x = code, y = well_depth_va, color = code)) + geom_point()
+
+
+ggplot(usgs_only, 
+       aes(x = well_depth_va, y = well_bottom, color = code)) + geom_point()
+
+# try different classification based on well depth 
+
+cv_class_mod_depth <- cv_analysis_mod %>% 
+  rowwise() %>%
+  mutate(aquifer = 
+        ifelse(well_depth_va < 500, "unconfined", 
+        ifelse(well_depth_va >= 500, "confined", NA)))
+
+summary_depth <- cv_class_mod_depth %>% 
+  group_by(aquifer) %>% 
+  count(aquifer)
+
+cv_modern_check_depth <- cv_class_mod_depth %>% 
+  rowwise() %>% 
+  mutate(check =
+           ifelse(is.na(aquifer) & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "only_usgs_data_c", 
+           ifelse(is.na(aquifer) & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "only_usgs_data_uc",
+           ifelse(aquifer == "confined" & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "true_c", 
+           ifelse(aquifer == "confined" & is.na(code), "no_data_c", 
+           ifelse(aquifer == "confined" & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "wrong_c", 
+           ifelse(aquifer == "unconfined" & is.na(code), "no_data_uc",
+           ifelse(aquifer == "unconfined" & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "true_uc", 
+           ifelse(aquifer == "unconfined" & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "wrong_uc", 
+            NA)))))))))
+
+summary_check_depth <- cv_modern_check_depth %>% 
+  group_by(check) %>% 
+  count(check)
+
+# what about early 1900s effect of 500 ft depth cut off? 
+
+cv_class_1900_depth <- cv_analysis_1900 %>% 
+  rowwise() %>%
+  mutate(aquifer = 
+        ifelse(well_depth_ft < 500, "unconfined", 
+        ifelse(well_depth_ft >= 500, "confined", NA)))
+
+summary_depth_1900 <- cv_class_1900_depth %>% 
+  group_by(aquifer) %>% 
+  count(aquifer)
+
+# map it 
+
+confined_1900_depth <- cv_class_1900_depth %>% 
+  filter(aquifer == "confined")
+
+# Write to file 
+write_csv(confined_1900_depth, here::here("output_data", "cv", "cv_1900_depth.txt"))
+
+confined_mod_depth <- cv_modern_check_depth %>% 
+  filter(aquifer == "confined")
+
+write_csv(confined_mod_depth, here::here("output_data", "cv", "cv_mod_depth.txt"))
+
+# DUPLICATE BUT 400 FT CUT OFF 
+
+cv_class_mod_depth_400 <- cv_analysis_mod %>% 
+  rowwise() %>%
+  mutate(aquifer = 
+        ifelse(well_depth_va < 400, "unconfined", 
+        ifelse(well_depth_va >= 400, "confined", NA)))
+
+summary_depth_400 <- cv_class_mod_depth_400 %>% 
+  group_by(aquifer) %>% 
+  count(aquifer)
+
+cv_modern_check_depth_400 <- cv_class_mod_depth_400 %>% 
+  rowwise() %>% 
+  mutate(check =
+           ifelse(is.na(aquifer) & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "only_usgs_data_c", 
+           ifelse(is.na(aquifer) & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "only_usgs_data_uc",
+           ifelse(aquifer == "confined" & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "true_c", 
+           ifelse(aquifer == "confined" & is.na(code), "no_data_c", 
+           ifelse(aquifer == "confined" & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "wrong_c", 
+           ifelse(aquifer == "unconfined" & is.na(code), "no_data_uc",
+           ifelse(aquifer == "unconfined" & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "true_uc", 
+           ifelse(aquifer == "unconfined" & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "wrong_uc", 
+            NA)))))))))
+
+summary_check_depth_400 <- cv_modern_check_depth_400 %>% 
+  group_by(check) %>% 
+  count(check)
+
+# 1900s
+cv_class_1900_depth_400 <- cv_analysis_1900 %>% 
+  rowwise() %>%
+  mutate(aquifer = 
+        ifelse(well_depth_ft < 400, "unconfined", 
+        ifelse(well_depth_ft >= 400, "confined", NA)))
+
+summary_depth_1900_400 <- cv_class_1900_depth_400 %>% 
+  group_by(aquifer) %>% 
+  count(aquifer)
+
+# map it 
+
+confined_1900_depth <- cv_class_1900_depth %>% 
+  filter(aquifer == "confined")
+
+# Write to file 
+write_csv(confined_1900_depth, here::here("output_data", "cv", "cv_1900_depth.txt"))
+
+confined_mod_depth <- cv_modern_check_depth %>% 
+  filter(aquifer == "confined")
+
+write_csv(confined_mod_depth, here::here("output_data", "cv", "cv_mod_depth.txt"))
+
+```
+
+Make table from summary of error/unconfined-confined checking --working on this, not complete 05/02/22
+
+```{r}
+# Not applicable with sample size 
+
+error_table <- summary_check %>%
+  filter(!is.na(check)) %>%
+  mutate(total_n = colSums(summary_check[,-1]))
+
+```
+
+### Make summary tables 
+
+To count confined, unconfined, artesian by aquifer unit 
+
+Make nice final table
+
+#### Modern Data 
+
+```{r}
+# Final summaries of "correct" data 
+
+# Modern data
+
+# Confined/unconfined and artesian by aquifer unit
+
+summary_mod_final_art <- me_modern_check %>% 
+  filter(!check %in% c("wrong_uc", "wrong_c")) %>% 
+  group_by(aquifer, status, artesian) %>% 
+  count(aquifer) %>% 
+  filter(!is.na(status))
+
+# Pivot wider 
+
+mod_final_wide <- pivot_wider(summary_mod_final_art, 
+                          names_from = c(status, artesian), 
+                          values_from = n) %>% 
+  mutate(total_n = rowSums(across(where(is.numeric)), na.rm = T)) %>% 
+  mutate(total_c = rowSums(across(confined_0:confined_1), na.rm = T)) %>% 
+  rowwise() %>% 
+  mutate(per_c = (total_c / total_n) *100) %>% 
+  mutate(per_art = (confined_1 / total_c) *100)
+
+# Tidy the table 
+
+mod_final_table <- mod_final_wide %>% 
+  select(aquifer, total_n, total_c, per_c, confined_1, per_art, confined_0) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate_if(is.numeric, round, digits = 2) %>% 
+  unite(confined_wells, c("total_c", "per_c"), sep = "  |  ") %>% 
+  unite(artesian_wells, c("confined_1", "per_art"), sep = "  |  ") %>% 
+  rename("Aquifer Units" = "aquifer", 
+         "N wells" = "total_n", 
+         "Number of wells defined as confined" = "confined_wells", 
+         "Artesian confined flowing wells" = "artesian_wells",
+         "Not artesian" = "confined_0") 
+
+
+# Write to file 
+write_csv(mod_final_table, here::here("output_data", "me", "mod_final_table.txt"))
+  
+```
+
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(mod_final_table, caption = "Table 1. Modern (2010-2021) confined and artesian wells of the Roswell Artesian Basin")
+```
+ 
+#### 1900s Data 
+
+```{r}
+# 1900s data
+
+# Confined/unconfined by aquifer unit 
+summary_1900_final <- confined_criteria_1900 %>% 
+  group_by(aquifer, status, artesian) %>% 
+  count(aquifer) 
+
+# Pivot wider 
+
+early1900s_final_wide <- pivot_wider(summary_1900_final, 
+                          names_from = c(status, artesian), 
+                          values_from = n) %>% 
+  mutate(total_n = rowSums(across(where(is.numeric)), na.rm = T)) %>% 
+  rowwise() %>% 
+  mutate(total_c = sum(c(confined_0, confined_1), na.rm = T)) %>% 
+  mutate(per_c = (total_c / total_n) *100) %>% 
+  mutate(per_art = (confined_1 / total_c) *100)
+
+# Tidy the table 
+
+early1900s_final_table <- early1900s_final_wide %>% 
+  select(aquifer, total_n, total_c, per_c, confined_1, per_art, confined_0) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate_if(is.numeric, round, digits = 2) %>% 
+  unite(confined_wells, c("total_c", "per_c"), sep = "  |  ") %>% 
+  unite(artesian_wells, c("confined_1", "per_art"), sep = "  |  ") %>% 
+  rename("Aquifer Units" = "aquifer", 
+         "N wells" = "total_n", 
+         "Number of wells defined as confined" = "confined_wells", 
+         "Artesian confined flowing wells" = "artesian_wells",
+         "Not artesian" = "confined_0") 
+
+# Write to file 
+write_csv(early1900s_final_table, here::here("output_data", "me", "early1900s_final_table.txt"))
+
+```
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(early1900s_final_table, caption = "Table 1. Early 1900s confined and artesian wells of the Roswell Artesian Basin")
+```
+
+Fraction of confined wells to depth 
+
+```{r}
+# Data frame for plots 
+ggplot_modern <- cv_modern_check %>% 
+  filter(!check %in% c("wrong_c", "wrong_uc")) %>% 
+  filter(!is.na(check))
+
+# Violin plot comparing confined, unconfined and USGS data/no data 
+ggplot(ggplot_modern, 
+       aes(x = status, 
+           y = well_depth_va, 
+           fill = check)) + 
+  geom_violin()
+
+```
+
 
 
 ### Separate each aquifer/unit and confined 

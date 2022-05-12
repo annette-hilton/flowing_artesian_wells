@@ -248,12 +248,12 @@ confined_criteria_mod <- me_class_mod %>%
            ifelse(aquifer %in% c("mrva", "vkbg"), "unconfined", 
            ifelse(aquifer == "ucaq" & is.na(vkbg_surf), "unconfined",
            ifelse(aquifer == "mccu" & is.na(vkbg_surf), "unconfined", 
-           ifelse(aquifer == "mcaq" & !is.na(mccu_surf) | !is.na(vkbg_surf), "confined",
-           ifelse(aquifer == "lccu" & !is.na(mccu_surf) | !is.na(vkbg_surf), "confined",
-           ifelse(aquifer == "lcaq" & !is.na(lccu_surf) | !is.na(mccu_surf) | !is.na(vkbg_surf), "confined",
-           ifelse(aquifer == "mwaq" & !is.na(lccu_surf) | !is.na(mccu_surf) | !is.na(vkbg_surf), "confined", 
-           ifelse(aquifer == "lwaq" & !is.na(lccu_surf) | !is.na(mccu_surf) | !is.na(vkbg_surf), "confined", 
-           ifelse(aquifer == "mdwy" & !is.na(lccu_surf) | !is.na(mccu_surf) | !is.na(vkbg_surf), "confined", "unconfined")))))))))))
+           ifelse(aquifer == "mcaq" & (!is.na(mccu_surf) | !is.na(vkbg_surf)), "confined",
+           ifelse(aquifer == "lccu" & (!is.na(mccu_surf) | !is.na(vkbg_surf)), "confined",
+           ifelse(aquifer == "lcaq" & (!is.na(lccu_surf) | !is.na(mccu_surf) | !is.na(vkbg_surf)), "confined",
+           ifelse(aquifer == "mwaq" & (!is.na(lccu_surf) | !is.na(mccu_surf) | !is.na(vkbg_surf)), "confined", 
+           ifelse(aquifer == "lwaq" & (!is.na(lccu_surf) | !is.na(mccu_surf) | !is.na(vkbg_surf)), "confined", 
+           ifelse(aquifer == "mdwy" & (!is.na(lccu_surf) | !is.na(mccu_surf) | !is.na(vkbg_surf)), "confined", "unconfined")))))))))))
 
 ```
 
@@ -273,12 +273,12 @@ confined_criteria_1900 <- me_class_1900 %>%
            ifelse(aquifer %in% c("mrva", "vkbg"), "unconfined", 
            ifelse(aquifer == "ucaq" & is.na(vkbg_surf_1), "unconfined",
            ifelse(aquifer == "mccu" & is.na(vkbg_surf_1), "unconfined", 
-           ifelse(aquifer == "mcaq" & !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined",
-           ifelse(aquifer == "lccu" & !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined",
-           ifelse(aquifer == "lcaq" & !is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined",
-           ifelse(aquifer == "mwaq" & !is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined", 
-           ifelse(aquifer == "lwaq" & !is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined", 
-           ifelse(aquifer == "mdwy" & !is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1), "confined", "unconfined")))))))))))
+           ifelse(aquifer == "mcaq" & (!is.na(mccu_surf_1) | !is.na(vkbg_surf_1)), "confined",
+           ifelse(aquifer == "lccu" & (!is.na(mccu_surf_1) | !is.na(vkbg_surf_1)), "confined",
+           ifelse(aquifer == "lcaq" & (!is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1)), "confined",
+           ifelse(aquifer == "mwaq" & (!is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1)), "confined", 
+           ifelse(aquifer == "lwaq" & (!is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1)), "confined", 
+           ifelse(aquifer == "mdwy" & (!is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1)), "confined", "unconfined")))))))))))
 
 ```
 
