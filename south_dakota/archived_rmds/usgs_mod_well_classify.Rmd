@@ -57,7 +57,7 @@ Arcfile = "cv"
 ```{r}
 # Read in modern data file from Arc 
 
-sd_mod_fromarc <- readr::read_csv(here::here("data", "south_dakota", "modern_dakota.txt"))
+sd_mod_fromarc <- readr::read_csv(here::here("data", "south_dakota", "archived", "modern_dakota.txt"))
 
 # Read in early 1900s data file from Arc (had to use read.csv rather than read_csv because default number of rows to check? Returned NAs rather than values) 
 

@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # Attach packages 
 
+library(plyr)
 library(tidyverse)
 library(here)
 library(janitor)
@@ -23,6 +24,7 @@ library(purrr)
 library(dplyr)
 library(tidyr)
 library(naniar)
+library(lubridate)
 
 
 # Disable scientific notation 
@@ -76,7 +78,10 @@ write_tsv(usgs_modern_med, here::here("output_data", "usgs_modern.txt"))
 ```{r}
 # Modern data 
 # Read in modern USGS data w/ DEM 
-dem_usgs_modern <- readr::read_csv(here::here("data", "dem", "dem_usgs_modern.csv"))
+
+na_values <- c("-9999")
+
+dem_usgs_modern <- readr::read_csv(here::here("data", "dem", "dem_usgs_modern.csv"), na = na_values)
 
 ```
 
@@ -123,7 +128,6 @@ joined_tidy <- joined_c_uc %>%
 ```
 
 
-
 ```{r}
 # Join DEM file
 
@@ -164,6 +168,8 @@ write_tsv(nacp_modern, here::here("data", "nacp", "nacp_modern.txt"))
 
 ### Central Valley (California) 
 
+USGS Data (above) 
+
 ```{r}
 # USGS data 
 cv_modern <- modern_final %>% 
@@ -171,52 +177,91 @@ cv_modern <- modern_final %>%
   clean_names()
 ```
 
+Additional data from GAMA CA 
+
+1. Upload data from Dr. Scott Jasechko (05/11/2022) of CA GAMA wells 
+2. Tidy data, write reduced file for GIS DEM analysis 
+3. DEM analysis 
+4. Import back into R, join with USGS file 
 
 ```{r}
-# CA drilling wells
-# Source: see `meta_data_read_me.Rmd` 
+# Step 1. 
+# GAMA CA Wells 
 
-# Load raw data 
-na_values <- c("-9999.0000000")
+# Create path for multiple files 
 
-ca_drill_raw <- readr::read_csv(here::here("data", "cv", "ca_wells_elv.txt"), na = na_values) 
+gama_files = list.files(path = here::here("data", "cv", "additional_ca_data"), pattern = "*.txt", full.names = TRUE)
 
+# Read in all files to one dataframe using list from above and `ldply()`
+
+na_values <- c("-1")
+
+allgama_files = ldply(gama_files, read_tsv, na = na_values, show_col_types = FALSE)
+
+```
+
+```{r}
+# Step 2. 
 # Initial tidy
-ca_drill_tidy <- ca_drill_raw %>% 
+
+ca_gama_tidy <- allgama_files %>% 
   clean_names() %>% 
-  filter(!total_comp == 0) %>% 
-  filter(year >= 2010) %>% 
-  select(wcr_number, decimal_la, decimal_lo, total_comp, static_wat, date_work, year, cali) 
+  filter(!depth <= 0) %>% 
+  filter(!water_level < -5000) %>% 
+  mutate(date = lubridate::parse_date_time(datetime, orders = c("ymd", "ymd HMS"))) %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(year >= 2010)
+  
+# Calculate median, artesian 
+
+ca_gama_tidy2 <- ca_gama_tidy %>% 
+  group_by(well_id) %>% 
+  mutate(median = median(water_level)) %>% 
+  distinct(well_id, .keep_all = TRUE) %>% 
+  mutate(artesian = ifelse(median <= 0, 1, 0))
+
+ca_gama_tidy2$well_id<- sub("^", "w", ca_gama_tidy2$well_id)
+
+# write to tsv for ArcGIS DEM processing 
+
+write_tsv(ca_gama_tidy2, here::here("output_data", "cv", "ca_gama_demtoarc.txt"))
+
+```
+
+Step 3 (in ArcGIS: on external hard drive "look busy", file called `cv_dem_gama`)
+
+```{r}
+# Step 4. 
+# Read in processed DEM data
+
+cv_dem <- readr::read_csv(here::here("data", "cv", "dem_fromarc0513.txt")) %>% 
+  clean_names()
 
 # Make consistent with USGS data to join them 
-ca_drill_tidy_final <- ca_drill_tidy %>% 
+ca_dem_tidy <- cv_dem %>% 
   mutate(id_x = "ca", 
-         artesian =  
-           ifelse(static_wat <= 0, 1, 0)) %>% 
-  mutate(national_aquifer_x = NA, 
+         national_aquifer_x = NA, 
          local_aquifer_x = NA, 
          code = NA,
          depth_m_x = NA) %>% 
-  rename(site_no = wcr_number, 
-         dec_lat_va_x = decimal_la, 
-         dec_long_va_x = decimal_lo, 
-         well_depth_va = total_comp, 
-         median = static_wat, 
-         level_date = date_work,
+  rename(site_no = well_id, 
+         dec_lat_va_x = lat, 
+         dec_long_va_x = lon, 
+         well_depth_va = depth, 
+         level_date = date,
          level_year = year, 
          rastervalu = cali) %>% 
   select(site_no, dec_lat_va_x, dec_long_va_x, well_depth_va, median, level_date, level_year, 
          id_x, artesian, rastervalu, national_aquifer_x, local_aquifer_x, code, depth_m_x)
-  
 ```
+
 
 ```{r}
 # Join USGS and drilling well data 
 
-cv_modern_final <- rbind(ca_drill_tidy_final, cv_modern)
+cv_modern_final <- rbind(ca_dem_tidy, cv_modern)
 
 write_tsv(cv_modern_final, here::here("data", "cv", "cv_modern.txt"))
-
 ```
  
 ### Floridan Aquifer System 
@@ -265,23 +310,107 @@ write_tsv(roswell_modern, here::here("data", "roswell", "roswell_modern.txt"))
 
 ### Dakota Aquifer (South Dakota) 
 
+USGS Data (above) 
+
 ```{r}
-# usgs_sd <- entire_usa_gw %>% 
-#   filter(id.x == "sd") %>% 
-#   filter(!well_depth_va == "NA") %>% 
-#   filter(!well_depth_va == 0.00) %>% 
-#   filter(!lev_dt == "NA") %>%
-#   filter(!is.na(lev_va)) 
-# 
-# usgs_sd$site_no <- sub("^", "w", usgs_sd$site_no)
-# 
-# write_tsv(usgs_sd, here::here("output_data", "sd", "usgs_sd.txt"))
-# write_tsv(usgs_modern_med_sd, here::here("output_data", "sd", "usgs_modern_sd.txt"))
+sd_modern <- modern_final %>% 
+  filter(id.x == "sd") %>% 
+  clean_names()
+```
 
-usgs_modern_med_sd <- modern_final %>% 
-  filter(id.x == "sd")
+Additional data from SD Observation Wells 
 
-write_tsv(usgs_modern_med_sd, here::here("data", "south_dakota", "usgs_modern_sd.txt"))
+1. Import data of Observation wells from South Dakota Department of Agriculture and Natural Resources (https://apps.sd.gov/nr69obswell/default.aspx#viewHelp). All records up to 11/18/2021
+2. Tidy data, write for ArcGIS Pro DEM analysis 
+3. DEM analysis 
+3. Import back into R, join with USGS file  
+
+
+```{r}
+# Step 1. 
+# Well Readings--water level, dates 
+
+sd_wells_raw <- list.files(path = here::here("data", "south_dakota", "sd_obs_wells", "well_readings"), 
+                                             pattern = "*.csv", 
+                                             full.names = T) %>% 
+                             map_df(~read_csv(., col_types = cols(.default = "c")))
+
+# Metadata--well depth 
+
+sd_depth_raw <- list.files(path = here::here("data", "south_dakota", "sd_obs_wells", "meta_data"), 
+                                             pattern = "*.csv", 
+                                             full.names = T) %>% 
+                             map_df(~read_csv(., col_types = cols(.default = "c")))
+```
+
+
+```{r}
+# Step 2. 
+# Tidy data, make consistent with USGS format 
+# Correct water level (SD Obs wells indicate artesian values w/ positive number, below land surface with negative)
+
+# Join data together 
+sd_join <- sd_wells_raw %>% 
+  full_join(sd_depth_raw, by = "Observation Well")
+
+# Tidy data 
+
+sd_full_tidy <- sd_join %>% 
+  clean_names() %>% 
+  select(-is_manual, -x8, -x14) %>% 
+  mutate(date = lubridate::mdy(reading_date), 
+         year = year(date)) %>% 
+  filter(year >= 2010) %>% 
+  filter(!is.na(reading)) %>% 
+  filter(!is.na(total_depth)) 
+
+sd_full_tidy$reading <- as.numeric(sd_full_tidy$reading)
+
+sd_full_med <- sd_full_tidy %>% 
+  mutate(corrected_water_lev = (reading*-1)) %>% 
+  group_by(observation_well) %>% 
+  mutate(median = median(corrected_water_lev)) %>% 
+  distinct(observation_well, .keep_all = TRUE) %>% 
+  mutate(artesian = ifelse(median <= 0, 1, 0))
+
+# Write for ArcGIS DEM analysis 
+write_tsv(sd_full_med, here::here("output_data", "sd", "sd_obs_wells_dem.txt"))
 
 ```
 
+Step 3 (in ArcGIS: on external hard drive "look busy", file called `south_dakota`)
+
+```{r}
+# Step 4. 
+# Read in processed DEM data
+
+sd_dem <- readr::read_csv(here::here("data", "south_dakota", "sd_dem_051322.txt")) %>% 
+  clean_names()
+
+# Make consistent with other data frame 
+
+sd_obs_join <- sd_dem %>% 
+  mutate(id_x = "sd", 
+         national_aquifer_x = NA, 
+         local_aquifer_x = NA, 
+         code = NA,
+         depth_m_x = NA) %>%
+rename(site_no = observation_well, 
+         dec_lat_va_x = latitude, 
+         dec_long_va_x = longitude, 
+         well_depth_va = total_depth, 
+         level_date = date,
+         level_year = year, 
+         rastervalu = ned10m_bilinear_cusa_albers102003 ) %>% 
+  select(site_no, dec_lat_va_x, dec_long_va_x, well_depth_va, median, level_date, level_year, 
+         id_x, artesian, rastervalu, national_aquifer_x, local_aquifer_x, code, depth_m_x)
+```
+
+```{r}
+# Join USGS and drilling well data 
+
+sd_modern_final <- rbind(sd_obs_join, sd_modern)
+
+write_tsv(sd_modern_final, here::here("data", "south_dakota", "sd_modern.txt"))
+```
+ 

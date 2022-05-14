@@ -374,8 +374,6 @@ ggplot(ggplot_modern,
 
 1900 to 2010-2020 
 
-Modern n = 143
-1900s n = 386
 
 ```{r}
 # MODERN 

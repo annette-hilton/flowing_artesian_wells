@@ -62,7 +62,7 @@ knitr::include_graphics(here::here("images", "columbia_cross_section.png"))
 
 The following steps were performed in ArcGIS:
 
-Hydrogeological data: Arcfile = "me_classify" (ArcPro)
+Hydrogeological data: Arcfile = "columbia_classify" (ArcPro)
 
 1.  Hydrogeologic layers (raster files)
 2.  Modern wells from aquifer system (USGS) (processed in Rmd
@@ -367,7 +367,7 @@ early1900s_final_table <- early1900s_final_wide %>%
          "Not artesian" = "confined_0") 
 
 # Write to file 
-write_csv(early1900s_final_table, here::here("output_data", "me", "early1900s_final_table.txt"))
+write_csv(early1900s_final_table, here::here("output_data", "columbia", "early1900s_final_table.txt"))
 
 ```
 

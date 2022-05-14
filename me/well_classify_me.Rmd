@@ -305,15 +305,6 @@ summary_check <- me_modern_check %>%
   group_by(check) %>% 
   count(check)
 
-# Checked wrong data (commented out)
-
-# Isolate wrong confined 
-
-# confined_wrong <- me_modern_check %>% 
-#   filter(check == "wrong_c")
-# 
-# write_tsv(confined_wrong, here::here("output_data", "me", "confined_wrong.txt"))
-
 ```
 
 Make table from summary of error/unconfined-confined checking --working on this, not complete 05/02/22

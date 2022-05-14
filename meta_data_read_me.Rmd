@@ -70,13 +70,19 @@ Data are derived from two USGS sites:
 Additional data sources: 
 
 - Central Valley Aquifer 
-  - Department of Water Resources, California 
-  - Date downloaded: 01/13/2022
-  - URL: https://dwr.maps.arcgis.com/apps/webappviewer/index.html?id=181078580a214c0986e2da28f8623b37
-  - Datum: WGS84 
+  - California Water Board, Groundwater Ambient Monitoring and Assessment Program (GAMA)  
+  - Date downloaded: 
+  - Date received: 05/11/2022; from Dr. Scott Jasechko 
+  - URL: https://www.waterboards.ca.gov/water_issues/programs/gama/online_tools.html
+  - Datum:  
   - Type: Table 
   
 - Dakota Aquifer (South Dakota) 
+  - South Dakota Department of Agriculture and Natural Resources
+  - Date downloaded: 11/18/2021
+  - URL: https://apps.sd.gov/nr69obswell/default.aspx#viewHelp
+  - Datum: 
+  - Type: Table 
 
 
 ## 2. Digital Elevation Model (DEM) 
