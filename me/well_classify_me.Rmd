@@ -2,10 +2,9 @@
 title: "Mississippi Embayment Project--Well Classification"
 author: "Annette Hilton"
 date: "04/28/2022"
-output: html_docu/ment
-editor_options: 
-  markdown: 
-    wrap: 72
+output: 
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -46,11 +45,13 @@ options(scipen=999)
 knitr::include_graphics(here::here("images", "me_aerial.png"))
 
 ```
+
 ```{r, fig.cap= 'Figure 2. Mississippi Embayment aerial extent (Hart et al., 2008)', fig.align='center', output.width= "200px", echo= FALSE}
 
 knitr::include_graphics(here::here("images", "me_cross_section.png"))
 
 ```
+
 
 ## ArcGIS Data Analysis
 
@@ -85,36 +86,36 @@ early1900s_fromarc <- readr::read_csv(here::here("data", "me", "me_historical_cl
 
 ### ME Aquifer Information
 
-Hydrogeologic Model Layer Surfaces:
+Hydrogeologic Model Layer Surfaces:  
 
 -   Mississippi river valley aquifer **mrva**
--   Vicksburg-Jackson Group confining unit (top) **(vkbg)**\
+-   Vicksburg-Jackson Group confining unit (top) **(vkbg)** 
 -   Upper Claiborne aquifer (top) **(ucaq)**
--   Middle Claiborne confining unit (top) **(mccu)**\
+-   Middle Claiborne confining unit (top) **(mccu)**
 -   Middle Claiborne aquifer (top) **(mcaq)**
--   Lower Claiborne confining unit (top) **(lccu)**\
+-   Lower Claiborne confining unit (top) **(lccu)**
 -   Lower Claiborne aquifer (top) **(lcaq)**
--   Middle Wilcox aquifer (top) **(mwaq)**
+-   Middle Wilcox aquifer (top) **(mwaq)** 
 -   Lower Wilcox aquifer (top) **(lwaq)**
 -   Midway confining unit (top) **(mdwy)**
 
-Unit Range (ft):
+Unit Range (ft):  
 
--   mrva: unknown
--   vkbg: 566 (-364)
--   ucaq: 521 (-874)
--   mccu: 540 (-1461)
--   mcaq: 654 (-1659)
--   lccu: 614 (-2539)
--   lcaq: 616 (-3102)
--   mwaq: 632 (-3347)
--   lwaq: 555 (-2320)
--   mdwy: 553 (-6036)
+-   mrva: unknown 
+-   vkbg: 566 (-364) 
+-   ucaq: 521 (-874) 
+-   mccu: 540 (-1461) 
+-   mcaq: 654 (-1659) 
+-   lccu: 614 (-2539) 
+-   lcaq: 616 (-3102) 
+-   mwaq: 632 (-3347) 
+-   lwaq: 555 (-2320) 
+-   mdwy: 553 (-6036) 
 
 ### Aquifer analysis
 
 -   Find well bottom
--   Find true water level
+-   Find true water level  
 
 ```{r}
 # Convert `rastervalu` column from meters to feet (conversion: 1 meter = 3.28084 feet)

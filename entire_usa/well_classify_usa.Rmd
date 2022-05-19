@@ -1,0 +1,258 @@
+---
+title: "Entire USA--Artesian Comparison"
+author: "Annette Hilton"
+date: "05/18/2022"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error = FALSE)
+```
+
+# Introduction
+
+This project is an examination of early 1900s (~1890-1906) groundwater conditions in the continental USA as compared to present day (2010-2021).
+
+The purpose of this Rmd is to: 
+
+1) Determine well-aquifer classification 
+2) Compare artesian conditions 
+  
+
+## Attach Packages and Data 
+
+```{r}
+# Attach packages 
+
+library(plyr) # Be sure to load `plyr()` first, otherwise other functions in tidyverse break! 
+library(tidyverse)
+library(here)
+library(janitor)
+library(naniar)
+library(knitr)
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+# Depth to Confined Investigations 
+
+1. Spatial join modern data (`modern_final.txt` from above) with aquifer file and depth data: processsed in ArcPro (file name: ) 
+2. Load into R for analysis 
+3. Analyze and determine artesian vs non artesian 
+4. Map in ArcPro 
+
+```{r}
+# Step 2. 
+# Modern data 
+
+modern_depths <- readr::read_csv(here::here("data", "depths", "modern_depth_joined.txt"))
+
+# 1900s data 
+early1900s_depths <- readr::read_csv(here::here("data", "depths", "early1900s_depths.txt"))
+
+```
+
+```{r}
+# How many wells do we have for each aquifer system that is greater than the confined depth cut off? 
+
+modern_analysis_depth <- modern_depths %>% 
+  mutate(depth_m = well_depth_va * 0.3048) %>% 
+  mutate(confined_depth = ifelse(depth_m >= DepthConfi, "confined depth", NA))
+
+modern_depth_final <- modern_analysis_depth %>% 
+  filter(!is.na(confined_depth)) %>% 
+  group_by(Aquifer_1) %>% 
+  filter(n() >= 4)
+
+write_tsv(modern_depth_final, here::here("data", "depths", "modern_depth_final.txt"))
+```
+
+```{r}
+# How many wells do we have for each aquifer system that is greater than the confined depth cut off? 
+
+historical_analysis_depth <- early1900s_depths %>% 
+  mutate(depth_m = well_depth * 0.3048) %>% 
+  mutate(confined_depth = ifelse(depth_m >= DepthConfi, "confined depth", NA))
+
+historical_depth_final <- historical_analysis_depth %>% 
+  filter(!is.na(confined_depth)) %>% 
+  group_by(Aquifer_1) %>% 
+  filter(n() >= 4)
+
+write_tsv(historical_depth_final, here::here("data", "depths", "historical_depth_final.txt"))
+```
+
+How many aquifers? 
+
+```{r}
+# Modern data 
+aquifer_modern <- modern_depth_final %>% 
+  distinct(Aquifer_1, .keep_all = T)
+
+# 1900 data 
+aquifer_historical <- historical_depth_final %>% 
+  distinct(Aquifer_1, .keep_all = T)
+
+```
+
+Join modern and historical data 
+
+```{r}
+both_hist_modern <- aquifer_modern %>% 
+  inner_join(aquifer_historical, by = "Aquifer_1")
+
+write_tsv(both_hist_modern, here::here("data", "depths", "both_aquiferstimeperiod.txt"))
+```
+
+#### Artesian Calculations 
+
+Only use data where 1900s and modern overlap in aquifer systems (n = 63) 
+
+```{r}
+# Make vector of shared aquifer systems 
+
+shared_aquifers <- both_hist_modern %>% 
+  pull(Aquifer_1)
+
+# Use the resulting vector to filter target sites from modern and 1900 data frames 
+
+modern_constrained <- modern_depth_final %>%
+  filter(Aquifer_1 %in% c(shared_aquifers))
+
+historical_constrained <- historical_depth_final %>%
+  filter(Aquifer_1 %in% c(shared_aquifers))
+```
+
+Write files to tsv 
+
+```{r}
+# Modern 
+write_tsv(modern_constrained, here::here("output_data", "depths", "modern_usa_confined.txt"))
+
+# 1900s
+write_tsv(historical_constrained, here::here("output_data", "depths", "historical_usa_confined.txt"))
+```
+
+### Summary tables 
+
+##### Modern Data 
+
+```{r}
+# Modern data
+
+# Confined/unconfined and artesian by aquifer unit
+
+summary_mod_final_art <- modern_usa %>% 
+  group_by(aquifer, status, artesian) %>% 
+  count(aquifer) %>% 
+  filter(!is.na(status))
+
+# Pivot wider 
+
+mod_final_wide <- pivot_wider(summary_mod_final_art, 
+                          names_from = c(status, artesian), 
+                          values_from = n) %>% 
+  mutate(total_n = rowSums(across(where(is.numeric)), na.rm = T)) %>% 
+  rowwise() %>% 
+  mutate(total_c = sum(c(confined_0, confined_1), na.rm = T)) %>% 
+  mutate(per_c = (total_c / total_n) *100) %>% 
+  mutate(per_art = (confined_1 / total_c) *100)
+
+# Tidy the table 
+
+mod_final_table <- mod_final_wide %>% 
+  select(aquifer, total_n, total_c, per_c, confined_1, per_art, confined_0) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate_if(is.numeric, round, digits = 2) %>% 
+  unite(confined_wells, c("total_c", "per_c"), sep = "  |  ") %>% 
+  unite(artesian_wells, c("confined_1", "per_art"), sep = "  |  ") %>% 
+  rename("Aquifer Units" = "aquifer", 
+         "N wells" = "total_n", 
+         "Number of wells defined as confined" = "confined_wells", 
+         "Artesian confined flowing wells" = "artesian_wells",
+         "Not artesian" = "confined_0") 
+
+
+# Write to file 
+write_csv(mod_final_table, here::here("output_data", "columbia", "mod_final_table.txt"))
+  
+```
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(mod_final_table, caption = "Table 1. Modern (2010-2021) confined and artesian wells of the Columbia Plateau")
+```
+
+##### 1900s Data 
+
+```{r}
+# 1900s data
+
+# Confined/unconfined by aquifer unit 
+summary_1900_final <- confined_criteria_1900 %>% 
+  group_by(aquifer, status, artesian) %>% 
+  count(aquifer) 
+
+# Pivot wider 
+
+early1900s_final_wide <- pivot_wider(summary_1900_final, 
+                          names_from = c(status, artesian), 
+                          values_from = n) %>% 
+  mutate(total_n = rowSums(across(where(is.numeric)), na.rm = T)) %>% 
+  rowwise() %>% 
+  mutate(total_c = sum(c(confined_0, confined_1), na.rm = T)) %>% 
+  mutate(per_c = (total_c / total_n) *100) %>% 
+  mutate(per_art = (confined_1 / total_c) *100)
+
+# Tidy the table 
+
+early1900s_final_table <- early1900s_final_wide %>% 
+  select(aquifer, total_n, total_c, per_c, confined_1, per_art, confined_0) %>% 
+  filter(!is.na(aquifer)) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate_if(is.numeric, round, digits = 2) %>% 
+  unite(confined_wells, c("total_c", "per_c"), sep = "  |  ") %>% 
+  unite(artesian_wells, c("confined_1", "per_art"), sep = "  |  ") %>% 
+  rename("Aquifer Units" = "aquifer", 
+         "N wells" = "total_n", 
+         "Number of wells defined as confined" = "confined_wells", 
+         "Artesian confined flowing wells" = "artesian_wells",
+         "Not artesian" = "confined_0") 
+
+# Write to file 
+write_csv(early1900s_final_table, here::here("output_data", "columbia", "early1900s_final_table.txt"))
+
+```
+
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(early1900s_final_table, caption = "Table 2. Early 1900s confined and artesian wells of the Mississippi Embayment")
+```
+
+### Visualization 
+
+Confined and unconfined well depth 
+
+```{r}
+# Data frame for plots 
+ggplot_modern <- cp_modern_check %>% 
+  filter(!check %in% c("wrong_c", "wrong_uc")) %>% 
+  filter(!is.na(check))
+
+# Violin plot comparing confined, unconfined and USGS data/no data 
+ggplot(ggplot_modern, 
+       aes(x = status, 
+           y = well_depth_va, 
+           fill = check)) + 
+  geom_violin()
+
+```

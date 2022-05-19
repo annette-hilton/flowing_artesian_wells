@@ -2,7 +2,9 @@
 title: "South Dakota Project--Well Classification"
 author: "Annette Hilton"
 date: "05/13/2022"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -43,9 +45,15 @@ options(scipen=999)
 
 # Overview of Dakota Aquifer System   
 
-```{r, fig.cap= 'Figure 1. Dakota Aquifer System aerial extent ( )', fig.align='center', output.width= "200px", echo= FALSE}
+```{r, fig.cap= 'Figure 1. Dakota Aquifer System aerial extent (Bredehoeft et al., 1983)', fig.align='center', output.width= "200px", echo= FALSE}
 
-knitr::include_graphics(here::here("images", "cv_aerial.png"))
+knitr::include_graphics(here::here("images", "sd_aerial.png"))
+
+```
+
+```{r, fig.cap= 'Figure 2. Dakota Aquifer System cross-section (Bredehoeft et al., 1983)', fig.align='center', output.width= "200px", echo= FALSE}
+
+knitr::include_graphics(here::here("images", "sd_cross_section.png"))
 
 ```
 

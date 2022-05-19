@@ -2,7 +2,9 @@
 title: "Meta Data"
 author: "Annette Hilton"
 date: "12/01/2021"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -21,8 +23,8 @@ The purpose of this project is to compare groundwater movement (vertical hydraul
 ## Data Sources 
 
 1. Groundwater data 
-- Early 1900s   
-- Modern (2010-2021)   
+  - Early 1900s 
+  - Modern (2010-2021) 
 2. Digital Elevation Model (DEM) 
 3. Hydrogeologic data 
 
@@ -47,11 +49,11 @@ The purpose of this project is to compare groundwater movement (vertical hydraul
 
 Includes:  
 
-- Central Valley Aquifer   
+- Central Valley Aquifer
 - Mississippi Embayment Aquifer System 
 - North Atlantic Coastal Plain 
 - Floridan Aquifer System 
-- Texas Gulf Coast Aquifer System  
+- Texas Gulf Coast Aquifer System 
 - Columbia Plateau Regional Aquifer System 
 - Dakota Aquifer 
 
@@ -70,12 +72,12 @@ Data are derived from two USGS sites:
 Additional data sources: 
 
 - Central Valley Aquifer 
-  - California Water Board, Groundwater Ambient Monitoring and Assessment Program (GAMA)  
+  - California Water Board, Groundwater Ambient Monitoring and Assessment Program (GAMA)
   - Date downloaded: 
   - Date received: 05/11/2022; from Dr. Scott Jasechko 
   - URL: https://www.waterboards.ca.gov/water_issues/programs/gama/online_tools.html
-  - Datum:  
-  - Type: Table 
+  - Datum:
+  - Type: Table   
   
 - Dakota Aquifer (South Dakota) 
   - South Dakota Department of Agriculture and Natural Resources
@@ -91,13 +93,13 @@ On external hard-drive "look busy"
 
 ## 3. Hydrogeologic data 
   
-- Central Valley Aquifer  
-- Mississippi Embayment Aquifer System   
-- North Atlantic Coastal Plain   
-- Floridan Aquifer System   
-- Texas Gulf Coast Aquifer System   
-- Columbia Plateau Regional Aquifer System 
-- Dakota Aquifer 
+- Central Valley Aquifer
+- Mississippi Embayment Aquifer System
+- North Atlantic Coastal Plain
+- Floridan Aquifer System
+- Texas Gulf Coast Aquifer System
+- Columbia Plateau Regional Aquifer System
+- Dakota Aquifer
   
 
 ### Central Valley Aquifer 

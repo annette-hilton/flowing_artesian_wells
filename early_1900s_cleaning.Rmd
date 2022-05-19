@@ -2,11 +2,13 @@
 title: "Early Well Records (~1880-1910) Data Cleaning"
 author: "Annette Hilton"
 date: "11/12/2021"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 ```
 
 # Continental USA early 1900s Data & Analysis 
@@ -44,7 +46,7 @@ options(scipen=999)
 
 ### 1--Early data from Jasechko lab 
 
-```{r}
+```{r, message = FALSE}
 # Specify NA values 
 
 na_values <- c("na", "Na", "NA")
@@ -276,5 +278,37 @@ early1900s_final <- early1900s_dem_tidy %>%
 # Write final 1900s file, includes DEM and original data 
 
 write_tsv(early1900s_final, here::here("data", "early1900s_final.txt"))
+```
+
+# Depth to Confined Investigations (05/18/22) 
+
+1. Spatial join modern data with aquifer file and depth data: processsed in ArcPro (file name: ) 
+2. Load into R for analysis 
+
+```{r}
+# Step 2. 
+early1900s_depths <- readr::read_csv(here::here("data", "depths", "early1900s_depths.txt"))
+```
+
+```{r}
+# How many wells do we have for each aquifer system that is greater than the confined depth cut off? 
+
+historical_analysis_depth <- early1900s_depths %>% 
+  mutate(depth_m = well_depth * 0.3048) %>% 
+  mutate(confined_depth = ifelse(depth_m >= DepthConfi, "confined depth", NA))
+
+historical_depth_final <- historical_analysis_depth %>% 
+  filter(!is.na(confined_depth)) %>% 
+  group_by(Aquifer_1) %>% 
+  filter(n() >= 4)
+
+write_tsv(historical_depth_final, here::here("data", "depths", "historical_depth_final.txt"))
+```
+
+How many aquifers? 
+
+```{r}
+aquifer_historical <- historical_depth_final %>% 
+  distinct(Aquifer_1, .keep_all = T)
 ```
 

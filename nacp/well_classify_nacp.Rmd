@@ -3,7 +3,7 @@ title: "NACP Project--Well Classification"
 author: "Annette Hilton"
 date: "05/03/2022"
 output:
-  pdf_document: default
+  word_document: default
   html_document: default
 ---
 

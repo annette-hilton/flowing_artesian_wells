@@ -2,7 +2,9 @@
 title: "Floridan Project--Well Classification"
 author: "Annette Hilton"
 date: "05/04/2022"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -30,6 +32,7 @@ library(here)
 library(janitor)
 library(naniar)
 library(data.table)
+library(knitr)
 
 # Disable scientific notation 
 
@@ -44,6 +47,7 @@ knitr::include_graphics(here::here("images", "fl_aerial.png"))
 
 ```
 
+
 ```{r, fig.cap= 'Figure 2. Floridan Aquifer System cross section view (Williams and Kuniansky, 2015)', fig.align='center', output.width= "200px", echo= FALSE}
 
 knitr::include_graphics(here::here("images", "fl_hydro.png"))
@@ -51,11 +55,13 @@ knitr::include_graphics(here::here("images", "fl_hydro.png"))
 ```
 
 
+
 ```{r, fig.cap= 'Figure 3. Floridan Aquifer System hydrological units (Williams and Kuniansky, 2015)', fig.align='center', output.width= "200px", echo= FALSE}
 
 knitr::include_graphics(here::here("images", "fl_hydro2.png"))
 
 ```
+
 
 ## ArcGIS Data Analysis 
 
@@ -137,26 +143,26 @@ Hydrogeologic Layer Surfaces:
 
 Two areas of units: 
 
-One: 
-- SURF 
-- UCU 
-- UF
-- Buca 
-- LISAPCU 
-- LF 
+One:   
+- SURF  
+- UCU   
+- UF  
+- Buca   
+- LISAPCU   
+- LF   
 
-Two: 
-- SURF
-- UCU
-- UF
-- OCAPLPZ
-- APPZ
-- LISAPCU
-- LF
-- MAPCU
-- LAPPZ
-- GLAUC
-- OLDSPZ
+Two:   
+- SURF  
+- UCU  
+- UF  
+- OCAPLPZ  
+- APPZ  
+- LISAPCU  
+- LF  
+- MAPCU  
+- LAPPZ  
+- GLAUC  
+- OLDSPZ  
 
 
 ### Aquifer analysis 
@@ -206,7 +212,7 @@ fl_analysis_1900 <- early1900s_fromarc %>%
 
 1. Use Upper Floridan top + UCU thickness = top of UCU 
 2. All wells above top of UCU = surficial aquifer 
-3. All wells below top of UCU = confined/specific aquifer units 
+3. All wells below top of UCU = confined/specific aquifer units   
 
 
 ```{r}
@@ -230,19 +236,19 @@ Process:
 
 If well bottom is greater than second unit (top), then it falls within the first unit (second unit top is the bottom of the first unit). 
 
-Well bottom < topo_ft & well bottom > max(ucu_top:oldspz_top) = “surf”
-Well bottom < ucu_top & well bottom > uf_top = “ucu"
-well bottom < buca_top & well bottom > lf_top = "buca" 
-well bottom < lisapcu_top & well bottom > lf_top = "lisapcu" 
-Well bottom < ocaplpz_top & well bottom > appz_top = “ocaplpz”
-well bottom < appz_top & well bottom > mapcu_top = "appz" 
-well bottom < mapcu_top & well bottom > lappz_top = "mapcu" 
-well bottom < lappz_top & well bottom > glauc_top = "lappz" 
-well bottom < glauc_top & well bottom > oldspz_top = "glauc" 
-well bottom < oldspz_top & well bottom > 3598 = "oldspz" 
+Well bottom < topo_ft & well bottom > max(ucu_top:oldspz_top) = “surf”  
+Well bottom < ucu_top & well bottom > uf_top = “ucu"  
+well bottom < buca_top & well bottom > lf_top = "buca"   
+well bottom < lisapcu_top & well bottom > lf_top = "lisapcu"   
+Well bottom < ocaplpz_top & well bottom > appz_top = “ocaplpz”  
+well bottom < appz_top & well bottom > mapcu_top = "appz"   
+well bottom < mapcu_top & well bottom > lappz_top = "mapcu"   
+well bottom < lappz_top & well bottom > glauc_top = "lappz"   
+well bottom < glauc_top & well bottom > oldspz_top = "glauc"   
+well bottom < oldspz_top & well bottom > 3598 = "oldspz"   
 
-well bottom < uf_top & well bottom > max(buca_top, lisapcu_top, ocaplpz_top) = "upper_fl" 
-well bottom < lf_top & lappz_top, glauc_top, oldspz_top is.na = "lower_fl" 
+well bottom < uf_top & well bottom > max(buca_top, lisapcu_top, ocaplpz_top) = "upper_fl"   
+well bottom < lf_top & lappz_top, glauc_top, oldspz_top is.na = "lower_fl"   
 
 
 Two areas of units: 

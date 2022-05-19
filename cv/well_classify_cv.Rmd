@@ -2,7 +2,9 @@
 title: "CV Project--Well Classification"
 author: "Annette Hilton"
 date: "05/13/2021"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -56,11 +58,13 @@ knitr::include_graphics(here::here("images", "cv_clay.png"))
 
 ```
 
+
 ```{r, fig.cap= 'Figure 3. Hydrogeologic layers of the Central Valley (Faunt, 2009)', fig.align='center', output.width= "200px", echo= FALSE}
 
 knitr::include_graphics(here::here("images", "cv_cross_section.png"))
 
 ```
+
 ## ArcGIS Data Analysis
 
 The following steps were performed in ArcGIS:

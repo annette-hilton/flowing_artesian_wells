@@ -2,7 +2,9 @@
 title: "Roswell Artesian Basin--Well Classification"
 author: "Annette Hilton"
 date: "05/09/2022"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
