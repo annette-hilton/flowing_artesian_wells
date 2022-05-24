@@ -41,7 +41,7 @@ options(scipen=999)
 
 entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usa_2022.txt"))
 ```
-test 
+Test for P and F status wells (pumping and flowing artesian) 
 
 ```{r}
 f_status <- entire_usa_gw %>% 
@@ -53,8 +53,7 @@ write_tsv(f_status, here::here("output_data", "f_status.txt"))
 
 p_status <- entire_usa_gw %>% 
   filter(lev_status_cd == "P") %>%
-  filter(level_year >= 2010) %>%
-  distinct(site_no, .keep_all = T)
+  filter(level_year >= 2010) 
 
 write_tsv(p_status, here::here("output_data", "p_status.txt"))
 ```
@@ -63,6 +62,8 @@ write_tsv(p_status, here::here("output_data", "p_status.txt"))
 
 - Remove wells without well depth 
 - Remove wells with zero depth 
+- Remove wells with "P" status (pumping) 
+- Keep wells with "F" status (flowing artesian) and add "-1" to their water level (is currently NA) 
 - Remove wells without a water level 
 - Keep records only from 2010 and later 
 - Calculate median water level for that time period 
@@ -73,9 +74,11 @@ write_tsv(p_status, here::here("output_data", "p_status.txt"))
  
 ```{r}
 usgs_modern <- entire_usa_gw %>% 
-  filter(!well_depth_va == "NA") %>% 
+  filter(!is.na(well_depth_va)) %>% 
   filter(!well_depth_va == 0.00) %>% 
-  filter(!lev_dt == "NA") %>%
+  filter(!is.na(lev_dt)) %>%
+  filter(!lev_status_cd == "P") %>% 
+  mutate(lev_va = case_when(lev_status_cd == "F" ~ -1, TRUE ~as.numeric(as.character(lev_va)))) %>% 
   filter(!is.na(lev_va)) %>% 
   filter(level_year >= 2010)
   
@@ -92,12 +95,6 @@ usgs_modern_med$site_no <- sub("^", "w", usgs_modern_med$site_no)
 write_tsv(usgs_modern_med, here::here("output_data", "usgs_modern.txt"))
 ```
 
-quick test 05/18/22
-
-```{r}
-lev_status <- usgs_modern %>% 
-  filter(!is.na(lev_status_cd))
-```
 
 ### Add DEM file and Confined/Unconfined USGS Definitions file  
 

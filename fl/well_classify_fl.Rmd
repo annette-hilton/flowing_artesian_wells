@@ -84,7 +84,7 @@ Hydrogeological data: Arcfile = "fl_classify" (ArcPro)
 # Read in modern data file from Arc 
 # Rename raster files to hydrogeologic units
 
-fl_mod_fromarc <- readr::read_csv(here::here("data", "fl", "fl_mod_classify.txt")) %>% 
+fl_mod_fromarc <- readr::read_csv(here::here("data", "fl", "fl_statusupdate_mod.txt")) %>% 
   clean_names() %>% 
   select(-oid, -fig45_top_lf_below_lisapcu_r) %>% 
   dplyr::rename(surf_thick = fig20_thickness_surficial_ra, 
@@ -343,16 +343,6 @@ fl_class_1900 <- fl_analysis_1900_2 %>%
         ifelse(well_bottom < oldspz_top & well_bottom > oldspz_bot, "oldspz", NA)))))))))))))
 ```
 
-```{r}
-# everything that is NA/did not get classified 
-
-na_fl <- fl_class_mod %>% 
-  filter(is.na(aquifer))
-
-# write_tsv(na_fl, "na_fl.txt")
-```
-
-
 ### Separate each aquifer/unit and confined
 
 Confining unit must be above (UCU, BUCA) 
@@ -417,15 +407,13 @@ summary_1900 <- confined_criteria_1900 %>%
 fl_modern_check <- confined_criteria_mod %>% 
   rowwise() %>% 
   mutate(check =
-           ifelse(is.na(status) & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "only_usgs_data_c", 
-           ifelse(is.na(status) & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "only_usgs_data_uc",
            ifelse(status == "confined" & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "true_c", 
            ifelse(status == "confined" & is.na(code), "no_data_c", 
            ifelse(status == "confined" & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "wrong_c", 
            ifelse(status == "unconfined" & is.na(code), "no_data_uc",
            ifelse(status == "unconfined" & code %in% c("Unconfined single aquifer", "Unconfined multiple aquifer"), "true_uc", 
            ifelse(status == "unconfined" & code %in% c("Confined single aquifer", "Confined multiple aquifers"), "wrong_uc", 
-            NA)))))))))
+            NA)))))))
 
 # Summary 
 summary_check <- fl_modern_check %>% 
