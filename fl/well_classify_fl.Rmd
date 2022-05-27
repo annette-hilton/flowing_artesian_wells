@@ -1,7 +1,7 @@
 ---
 title: "Floridan Project--Well Classification"
 author: "Annette Hilton"
-date: "05/04/2022"
+date: "05/27/2022"
 output:
   word_document: default
   html_document: default
@@ -84,7 +84,7 @@ Hydrogeological data: Arcfile = "fl_classify" (ArcPro)
 # Read in modern data file from Arc 
 # Rename raster files to hydrogeologic units
 
-fl_mod_fromarc <- readr::read_csv(here::here("data", "fl", "fl_statusupdate_mod.txt")) %>% 
+fl_mod_fromarc <- readr::read_csv(here::here("data", "fl", "fl_mod_classify_052722.txt")) %>% 
   clean_names() %>% 
   select(-oid, -fig45_top_lf_below_lisapcu_r) %>% 
   dplyr::rename(surf_thick = fig20_thickness_surficial_ra, 
@@ -539,6 +539,7 @@ early1900s_final_table <- early1900s_final_wide %>%
 write_csv(early1900s_final_table, here::here("output_data", "fl", "early1900s_final_table.txt"))
 
 ```
+
 ```{r echo = FALSE, results = 'asis'}
 
 # Display knitted table 

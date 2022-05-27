@@ -1,7 +1,7 @@
 ---
 title: "Entire USA--Artesian Comparison"
 author: "Annette Hilton"
-date: "05/18/2022"
+date: "05/27/2022"
 output:
   word_document: default
   html_document: default
@@ -40,7 +40,7 @@ options(scipen=999)
 
 # Depth to Confined Investigations 
 
-1. Spatial join modern data (`modern_final.txt` from above) with aquifer file and depth data: processsed in ArcPro (file name: ) 
+1. Spatial join modern data (`modern_final.txt` from `modern_data_cleaning.Rmd`) with aquifer file and depth data: processsed in ArcPro (file name: ) 
 2. Load into R for analysis 
 3. Analyze and determine artesian vs non artesian 
 4. Map in ArcPro 

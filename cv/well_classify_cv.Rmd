@@ -88,7 +88,7 @@ Hydrogeological data: Arcfile = "cv_classify" (ArcPro)
 
 na_values <- c("-9999", "-9999.0000000", "NA")
 
-cv_mod_fromarc <- readr::read_csv(here::here("data", "cv", "cv_modern_classify.txt"), na = na_values) %>% 
+cv_mod_fromarc <- readr::read_csv(here::here("data", "cv", "cv_mod_classify_052722.txt"), na = na_values) %>% 
   clean_names()
   
 
@@ -124,7 +124,7 @@ cv_analysis_mod <- cv_mod_fromarc %>%
   mutate(topo_ft = rastervalu * 3.28084) %>% 
   mutate(well_bottom = topo_ft - well_depth_va) %>% 
    mutate(keep = 
-           ifelse(is.na(layer1_top) & is.na(layer3_top) 
+           ifelse(is.na(layer3_top) 
                   & is.na(layer4_top) & is.na(layer5_top) & is.na(layer6_top), "NA", "keep")) %>% 
   filter(!keep == "NA")
 

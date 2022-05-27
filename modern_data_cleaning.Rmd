@@ -1,7 +1,7 @@
 ---
 title: "Modern Well Records (~2010-2020)"
 author: "Annette Hilton"
-date: "05/10/2022"
+date: "05/27/2022"
 output:
   word_document: default
   html_document: default
@@ -41,28 +41,12 @@ options(scipen=999)
 
 entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usa_2022.txt"))
 ```
-Test for P and F status wells (pumping and flowing artesian) 
-
-```{r}
-f_status <- entire_usa_gw %>% 
-  filter(lev_status_cd == "F") %>% 
-  filter(level_year >= 2010) %>%
-  distinct(site_no, .keep_all = T)
-
-write_tsv(f_status, here::here("output_data", "f_status.txt"))
-
-p_status <- entire_usa_gw %>% 
-  filter(lev_status_cd == "P") %>%
-  filter(level_year >= 2010) 
-
-write_tsv(p_status, here::here("output_data", "p_status.txt"))
-```
 
 ### Tidy Data 
 
 - Remove wells without well depth 
 - Remove wells with zero depth 
-- Remove wells with "P" status (pumping) 
+- Remove wells with "P" status (pumping), remove 2, 3, 6, C, D, O status (reference here: https://help.waterdata.usgs.gov/code/lev_status_query?fmt=html) 
 - Keep wells with "F" status (flowing artesian) and add "-1" to their water level (is currently NA) 
 - Remove wells without a water level 
 - Keep records only from 2010 and later 
@@ -77,7 +61,7 @@ usgs_modern <- entire_usa_gw %>%
   filter(!is.na(well_depth_va)) %>% 
   filter(!well_depth_va == 0.00) %>% 
   filter(!is.na(lev_dt)) %>%
-  filter(!lev_status_cd == "P") %>% 
+  filter(lev_status_cd %in% c("1", "4", "5", "7", "8", "9", "F")) %>% 
   mutate(lev_va = case_when(lev_status_cd == "F" ~ -1, TRUE ~as.numeric(as.character(lev_va)))) %>% 
   filter(!is.na(lev_va)) %>% 
   filter(level_year >= 2010)

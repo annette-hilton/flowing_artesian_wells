@@ -1,7 +1,7 @@
 ---
 title: "NACP Project--Well Classification"
 author: "Annette Hilton"
-date: "05/23/2022"
+date: "05/27/2022"
 output:
   word_document: default
   html_document: default
@@ -80,7 +80,7 @@ Hydrogeological data: Arcfile = "nacp_classify" (ArcPro)
 # Read in modern data file from Arc 
 # Rename columns 
 
-nacp_mod_fromarc <- readr::read_csv(here::here("data", "nacp", "nacp_statusupdate_mod.txt")) %>% 
+nacp_mod_fromarc <- readr::read_csv(here::here("data", "nacp", "nacp_mod_classify_052722.txt")) %>% 
   clean_names() %>% 
   rename(nacp_aq01s = nacp_aq01surf,
          nacp_cu01 = nacp_cu01, 
