@@ -380,4 +380,16 @@ write_csv(sd_confined_1900, here::here("output_data", "sd", "sd_confined_histori
 
 ```
 
+Final summary table of artesian conditions (percentage of flowing artesian wells) 
+
+```{r}
+# Modern 
+mod_art <- sd_confined_mod %>% 
+  count(artesian) 
+
+
+# Historical 
+hist_art <- sd_confined_1900 %>% 
+  count(artesian)
+```
 

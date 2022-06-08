@@ -425,3 +425,16 @@ cp_confined_1900 <- confined_criteria_1900 %>%
 write_csv(cp_confined_1900, here::here("output_data", "columbia", "cp_confined_historical.txt"))
 
 ```
+
+Final summary table of artesian conditions (percentage of flowing artesian wells) 
+
+```{r}
+# Modern 
+mod_art <- cp_confined_mod %>% 
+  count(artesian) 
+
+
+# Historical 
+hist_art <- cp_confined_1900 %>% 
+  count(artesian)
+```

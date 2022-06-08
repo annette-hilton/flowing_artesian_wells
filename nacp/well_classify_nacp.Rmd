@@ -737,3 +737,16 @@ write_csv(nacp_confined_1900, here::here("output_data", "nacp", "nacp_confined_h
 
 ```
 
+Final summary table of artesian conditions (percentage of flowing artesian wells) 
+
+```{r}
+# Modern 
+mod_art <- nacp_confined_mod %>% 
+  count(artesian) 
+
+
+# Historical 
+hist_art <- nacp_confined_1900 %>% 
+  count(artesian)
+```
+

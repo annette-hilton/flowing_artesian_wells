@@ -398,3 +398,16 @@ historical_roswell_artesia <- roswell_class_1900 %>%
 write_tsv(historical_roswell_artesia, here::here("output_data", "roswell", "historical_roswell_artesia.txt"))
 ```
 
+Final summary table of artesian conditions (percentage of flowing artesian wells) 
+
+```{r}
+# Modern 
+mod_art <- modern_roswell_artesia %>% 
+  count(artesian) 
+
+
+# Historical 
+hist_art <- historical_roswell_artesia %>% 
+  count(artesian)
+```
+
