@@ -165,6 +165,15 @@ art_summary_1900 <- historical_constrained %>%
   count(artesian)
 ```
 
+```{r}
+# Test for dakota 
+
+dakota <-  modern_constrained %>% 
+  filter(Aquifer_1 %in% c("Dakota Aquifer System", "Eastern Dakota Aquifer")) 
+
+dak_hist <- hist(dakota$depth_m)
+```
+
 Write files to tsv 
 
 ```{r}
@@ -283,5 +292,35 @@ joined <- historical_final_wide %>%
 
 
 write_tsv(joined, here::here("output_data", "depths", "joined_fractions_060722.txt"))
+```
+
+Individual Systems  
+
+```{r}
+# ME 
+
+me <- joined %>% 
+  filter(Aquifer %in% c("Confined Clayborne Near Jackson", "Central Mississippi Embayment", "Western Mississippi Embayment", "Eastern Mississippi Embayment"))
+
+cv <- joined %>% 
+  filter(Aquifer %in% c("Tulare Basin", "San Joaquin Basin", "Sacramento Basin"))
+
+nacp <- joined %>%
+  filter(Aquifer %in% c("New Jersey Coastal Plain", "Delmarva Peninsula", "Maryland Western Shores", "North Carolina and Virginia Coastal Plain", "Long Island"))
+
+fl <- joined %>%
+  filter(Aquifer %in% c("Doughtery Plain and Marianna Lowlands", "Tifton Upland", "Ocala Uplift", "Eastern Flatwoods Southshores", "Vidalia Upland", "Bacon Terrace", "Lower Coastal Plain", "Sea Island", "Intermediate Aquifer", "Pearl and Chattahoochee Aquifer System"))
+
+tx <- joined %>%
+  filter(Aquifer %in% c("Houston-Galveston Area"))
+
+roswell <- joined %>% 
+  filter(Aquifer == "Roswell Basin")
+
+cp <- joined %>% 
+  filter(Aquifer == "Umatilla Basin and Horse Heaven Hills")
+
+dak <- joined %>% 
+  filter(Aquifer %in% c("Eastern Dakota Aquifer", "Dakota Aquifer System"))
 ```
 

@@ -137,7 +137,8 @@ early_1900s_tidy <- joined_jl %>%
          longitude_adj = ifelse(!is.na(new_lon), new_lon, longitude)) %>% 
   select(-latitude, -longitude, -new_lat:-diff_lon) %>% 
   rename(latitude = latitude_adj, 
-         longitude = longitude_adj)
+         longitude = longitude_adj) %>% 
+  filter(!is.na(well_depth_ft))
 
 early_1900s_tidy$id<- sub("^", "w", early_1900s_tidy$id)
 
@@ -147,15 +148,50 @@ early_1900s_tidy$id<- sub("^", "w", early_1900s_tidy$id)
 ### 2-- Mendenhall et al., 1916
 
 ```{r}
+# mendenhall_tidy <- mendenhall_raw %>% 
+#   rename(id = site_id, 
+#          latitude = lat_dd, 
+#          longitude = long_dd, 
+#          water_level_ft = water_depth_ft) %>% 
+#   mutate(correct_water_levelft = water_depth_m*3.28084, 
+#            artesian = ifelse(correct_water_levelft == 0 | water_level_ft == 0, 1, 0)) # WRONG SAD TIMES 
+# 
+# mendenhall_tidy$id <- sub("^", "w", mendenhall_tidy$id)
+# 
+# # Quick check for methods (6/23/22) 
+# 
+# check_men <- mendenhall_tidy %>% 
+#   filter(!is.na(water_level_ft)) %>% 
+#   filter(!is.na(well_depth_ft)) %>% 
+#   filter(!is.na(artesian))
+# 
+# pull_menden <- check_men %>% 
+#   pull(id) 
+# 
+# check_menden <- check_men %>% 
+#   select(id)
+# 
+# write_tsv(check_menden, here::here("output_data", "cv", "checking_menden.txt"))
+
+```
+
+
+### 2-- Mendenhall et al., 1916 -- CORRECT, OR HOPEFULLY 
+
+```{r}
+
 mendenhall_tidy <- mendenhall_raw %>% 
-  rename(id = site_id, 
+  rename(id = real_site_id, 
          latitude = lat_dd, 
          longitude = long_dd, 
          water_level_ft = water_depth_ft) %>% 
-  mutate(correct_water_levelft = water_depth_m*3.28084, 
-           artesian = ifelse(correct_water_levelft == 0 | water_level_ft == 0, 1, 0))
+  mutate(correct_water_levelft = water_depth_m*3.28084) %>% 
+  filter(!(is.na(water_level_ft) & is.na(correct_water_levelft))) %>% 
+  filter(!is.na(well_depth_ft)) %>% 
+  mutate(final_waterlev = ifelse(is.na(water_level_ft), correct_water_levelft, water_level_ft)) %>%
+  mutate(artesian = ifelse(final_waterlev <= 0, 1, 0))
 
-mendenhall_tidy$id <- sub("^", "w", mendenhall_tidy$id)
+ mendenhall_tidy$id <- sub("^", "w", mendenhall_tidy$id)
 ```
 
 ### 3-- USGS Groundwater Wells 
@@ -182,13 +218,17 @@ early_usgs_med <- usa_early %>%
          latitude = dec_lat_va, 
          longitude = dec_long_va, 
          well_depth_ft = well_depth_va, 
-         water_level_ft = lev_va) %>% 
-  mutate(artesian = ifelse(water_level_ft <= 0, 1, 0))
+         water_level_ft = median) %>% 
+  mutate(artesian = ifelse(water_level_ft <= 0, 1, 0)) %>% 
+  filter(!is.na(well_depth_ft))
+
+sum_early1 <- early_usgs_med %>% 
+  group_by(artesian) %>% 
+  count(artesian)
 
 early_usgs_med$id <- sub("^", "w", early_usgs_med$id)
   
 ```
-
 
 # Prepare for Analysis 
 
@@ -210,6 +250,10 @@ join_jl <- early_1900s_tidy %>%
 join_mendenhall <- mendenhall_tidy %>% 
   select(id, latitude, longitude, well_depth_ft, water_level_ft, artesian)
 
+# write for arcgis dem processing (late addition with corrections--6/23/22) 
+
+write_tsv(join_mendenhall, here::here("output_data", "cv", "menden_forarc.txt"))
+
 join_usgs <- early_usgs_med %>% 
   select(id, latitude, longitude, well_depth_ft, water_level_ft, artesian)
 ```
@@ -217,17 +261,15 @@ join_usgs <- early_usgs_med %>%
 ```{r}
 # Join data frames 
 
-early1900s_all <- rbind(join_jl, join_mendenhall, join_usgs)
+early1900s_all <- rbind(join_jl, join_usgs)
 ```
 
 ```{r}
-# Tidy data 
-# Remove data without well depth 
+# Tidy data
 # Remove data without artesian indication 
 
 early1900s_arc <- early1900s_all %>% 
-  filter(!is.na(artesian)) %>% 
-  filter(!is.na(well_depth_ft))
+  filter(!is.na(artesian))
   
 ```
 
@@ -243,6 +285,8 @@ write_tsv(early1900s_arc, here::here("output_data", "early1900s_arc.txt"))
 
 - On external hard drive, "look busy" 
 - `me project` 
+- `cv_mendenhall` 
+*Extract multi values to points 
 
 4. Import DEM file, merge with original 1900s dataframe 
 
@@ -251,31 +295,35 @@ write_tsv(early1900s_arc, here::here("output_data", "early1900s_arc.txt"))
 
 early1900s_dem <- readr::read_csv(here::here("data", "dem", "early1900s_dem_wgs84_final.txt"))
 
+# Extra Mendenhall CV data 
+
+cv_dem_mend <- readr::read_csv(here::here("data", "dem", "cv_mend_dem062322.txt"))
+
 # Tidy DEM file 
 # Keep only the ID and the DEM value 
-# Remove any duplicates (duplicates generated in ArcGIS process) 
 
 early1900s_dem_tidy <- early1900s_dem %>% 
-  select(id, ned10m_bilinear_cusa_albers102003) %>% 
-  distinct(id, .keep_all = TRUE)
+  select(id, ned10m_bilinear_cusa_albers102003) 
 
-# Remove duplicates from metadata file (duplicates somehow generated in the ArcGIS process) 
-
-early1900s_arc_tidy <- early1900s_arc %>% 
-  distinct(id, .keep_all = TRUE)
+cv_dem_mend_tidy <- cv_dem_mend %>% 
+  select(id, cali)
 
 # Join with metadata file/full 1900s file 
 
 early1900s_final <- early1900s_dem_tidy %>% 
-  full_join(early1900s_arc_tidy, by = "id") 
+  inner_join(early1900s_arc, by = "id") 
 
+# Join cv mendenhall files and dem 
+
+help_please <- cv_dem_mend_tidy %>% 
+  inner_join(join_mendenhall, by = "id")
 ```
 
 
 5. Write file for analysis in `well_classify.Rmd` 
 
 ```{r}
-# Write final 1900s file, includes DEM and original data 
+# Write final 1900s file, includes DEM and original data   
 
 write_tsv(early1900s_final, here::here("data", "early1900s_final.txt"))
 ```

@@ -355,6 +355,15 @@ write_csv(cv_confined_mod, here::here("output_data", "cv", "cv_confined_mod.txt"
 cv_confined_1900 <- cv_class_1900 %>% 
   filter(aquifer == "confined") 
 
+# Check methods--mendenhall data issue (6/23/22) 
+
+check_menden <- read_tsv(here::here("output_data", "cv", "checking_menden.txt"))
+
+joined_mend <- check_menden %>% 
+  inner_join(cv_confined_1900, by = "id")
+
+write_tsv(joined_mend, here::here("output_data", "cv", "bad_menden.txt"))
+
 # Write as tsv 
 write_csv(cv_confined_1900, here::here("output_data", "cv", "cv_confined_historical.txt"))
 

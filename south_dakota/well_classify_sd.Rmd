@@ -393,3 +393,14 @@ hist_art <- sd_confined_1900 %>%
   count(artesian)
 ```
 
+Test Dakota 
+
+```{r}
+# Depths 
+
+dak_m <- sd_confined_mod %>% 
+  mutate(well_m = well_depth_va * 0.3048)
+
+dak_hist <- hist(dak_m$well_m) 
+```
+
