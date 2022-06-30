@@ -181,7 +181,7 @@ early_1900s_tidy$id<- sub("^", "w", early_1900s_tidy$id)
 ```{r}
 
 mendenhall_tidy <- mendenhall_raw %>% 
-  rename(id = real_site_id, 
+  rename(id = new_id, 
          latitude = lat_dd, 
          longitude = long_dd, 
          water_level_ft = water_depth_ft) %>% 
@@ -191,7 +191,7 @@ mendenhall_tidy <- mendenhall_raw %>%
   mutate(final_waterlev = ifelse(is.na(water_level_ft), correct_water_levelft, water_level_ft)) %>%
   mutate(artesian = ifelse(final_waterlev <= 0, 1, 0))
 
- mendenhall_tidy$id <- sub("^", "w", mendenhall_tidy$id)
+ mendenhall_tidy$id <- sub("^", "w_m", mendenhall_tidy$id)
 ```
 
 ### 3-- USGS Groundwater Wells 
@@ -199,7 +199,7 @@ mendenhall_tidy <- mendenhall_raw %>%
 (USGS email correspondence indicate: neg = artesian, pos = below land surface)
 
 ```{r}
-# Entire USGS groundwater well data until fall 2019 (last updated) 
+# Entire USGS groundwater well data until Jan 2022 (last updated) 
 
 usa_early <- entire_usa_gw %>% 
   filter(!well_depth_va == "NA" | !hole_depth_va == "NA") %>% 
@@ -297,7 +297,7 @@ early1900s_dem <- readr::read_csv(here::here("data", "dem", "early1900s_dem_wgs8
 
 # Extra Mendenhall CV data 
 
-cv_dem_mend <- readr::read_csv(here::here("data", "dem", "cv_mend_dem062322.txt"))
+cv_dem_mend <- readr::read_csv(here::here("data", "dem", "cv_mend_fromarc062722.txt"))
 
 # Tidy DEM file 
 # Keep only the ID and the DEM value 
@@ -306,7 +306,7 @@ early1900s_dem_tidy <- early1900s_dem %>%
   select(id, ned10m_bilinear_cusa_albers102003) 
 
 cv_dem_mend_tidy <- cv_dem_mend %>% 
-  select(id, cali)
+  select(id, cali) 
 
 # Join with metadata file/full 1900s file 
 
@@ -315,48 +315,25 @@ early1900s_final <- early1900s_dem_tidy %>%
 
 # Join cv mendenhall files and dem 
 
-help_please <- cv_dem_mend_tidy %>% 
-  inner_join(join_mendenhall, by = "id")
+final_menden <- cv_dem_mend_tidy %>% 
+  inner_join(join_mendenhall, by = "id") %>% 
+  rename(ned10m_bilinear_cusa_albers102003 = cali)
 ```
 
+Join all together (Corrected Mendenhall and early 1900s other data) 
+
+```{r}
+# Join all 
+
+early1900s_final_062722 <- rbind(early1900s_final, final_menden)
+
+```
 
 5. Write file for analysis in `well_classify.Rmd` 
 
 ```{r}
 # Write final 1900s file, includes DEM and original data   
 
-write_tsv(early1900s_final, here::here("data", "early1900s_final.txt"))
-```
-
-# Depth to Confined Investigations (05/18/22) 
-
-1. Spatial join modern data with aquifer file and depth data: processsed in ArcPro (file name: ) 
-2. Load into R for analysis 
-
-```{r}
-# Step 2. 
-early1900s_depths <- readr::read_csv(here::here("data", "depths", "early1900s_depths.txt"))
-```
-
-```{r}
-# How many wells do we have for each aquifer system that is greater than the confined depth cut off? 
-
-historical_analysis_depth <- early1900s_depths %>% 
-  mutate(depth_m = well_depth * 0.3048) %>% 
-  mutate(confined_depth = ifelse(depth_m >= DepthConfi, "confined depth", NA))
-
-historical_depth_final <- historical_analysis_depth %>% 
-  filter(!is.na(confined_depth)) %>% 
-  group_by(Aquifer_1) %>% 
-  filter(n() >= 4)
-
-write_tsv(historical_depth_final, here::here("data", "depths", "historical_depth_final.txt"))
-```
-
-How many aquifers? 
-
-```{r}
-aquifer_historical <- historical_depth_final %>% 
-  distinct(Aquifer_1, .keep_all = T)
+write_tsv(early1900s_final_062722, here::here("data", "early1900s_final.txt"))
 ```
 
