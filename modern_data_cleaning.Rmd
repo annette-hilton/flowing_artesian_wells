@@ -148,7 +148,6 @@ modern_final <- modern_intermediate %>%
   select(-dec_lat_va.y, -dec_long_va.y)
 
 write_tsv(modern_final, here::here("data", "modern_final.txt"))
-
 ```
 
 # Individual Aquifer Systems 

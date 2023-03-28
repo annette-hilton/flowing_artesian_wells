@@ -90,7 +90,7 @@ early1900s_fromarc <- readr::read_csv(here::here("data", "tx", "tx_1900_classify
 Hydrogeologic Layer Surfaces:
 
 - Chicot (surficial/unconfined) 
-- Evangaline aquifer
+- Evangeline aquifer
 - Burkeville confining unit 
 - Jasper aquifer
 - Catahoula confining unit 

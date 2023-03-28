@@ -53,7 +53,7 @@ options(scipen=999)
 South Dakota observation wells with aquifer notation (known wells screened in the Dakota formation; not used in our lithological log raster compilation) 
 
 ```{r}
-sd_dakota_rastercheck <- readr::read_tsv(here::here("output_data", "sd", "sd_dakota_rastercheck.txt"))
+sd_dakota_rastercheck <- readr::read_tsv(here::here("output_data", "sd", "dak_build", "sd_dakota_rastercheck.txt"))
 
 ```
 
@@ -66,7 +66,7 @@ sd_dakota <- sd_dakota_rastercheck %>%
   select(id, lat, long, aquifer, depth) %>% 
   filter(aquifer == "DKOT")
 
-write_tsv(sd_dakota, here::here("output_data", "sd", "sd_dakota_test.txt"))
+write_tsv(sd_dakota, here::here("output_data", "sd", "dak_build", "sd_dakota_test.txt"))
 ```
 
 ### Process in ArcPRO 
@@ -82,11 +82,11 @@ write_tsv(sd_dakota, here::here("output_data", "sd", "sd_dakota_test.txt"))
 
 # IDW with entire top (including black hills), bottom, and top without black hills 
 
-sd_dakota_rasterprocessed <- readr::read_csv(here::here("data", "south_dakota", "sd_wells_dakota_intersect.txt"))
+sd_dakota_rasterprocessed <- readr::read_csv(here::here("data", "south_dakota", "archived", "sd_wells_dakota_intersect.txt"))
 
 #NNDW with top without black hills and bottom 
 
-sd_dakota_natural <- readr::read_csv(here::here("data", "south_dakota", "test_dakota_natural.txt"))
+sd_dakota_natural <- readr::read_csv(here::here("data", "south_dakota", "archived",  "test_dakota_natural.txt"))
 ```
 
 ```{r}
