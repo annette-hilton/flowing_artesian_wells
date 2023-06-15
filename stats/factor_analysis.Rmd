@@ -1,0 +1,60 @@
+---
+title: "Stats"
+author: "Annette Hilton"
+date: '2023-06-11'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse) 
+library(psych)
+library(psychTools)
+```
+
+```{r}
+aquifer_prop <- readr::read_tsv(here::here("data", "stats", "aquifer_properties.txt"))
+
+
+# Remove % string
+aquifer_prop$perc_change <- gsub("%", "", aquifer_prop$perc_change)
+
+# Make column (perc_change) numeric 
+aquifer_prop$perc_change <- as.numeric(aquifer_prop$perc_change)
+
+```
+
+Describe data 
+
+```{r}
+describe(aquifer_prop)
+```
+
+
+Data patterns 
+
+```{r}
+pairs.panels(aquifer_prop)
+```
+
+Correlations 
+
+```{r}
+# Descriptively 
+
+lowerCor(aquifer_prop)
+
+# Visually 
+
+# corPlot(aquifer_prop)
+```
+
+Factor 
+
+```{r}
+fa(aquifer_prop)
+```
+

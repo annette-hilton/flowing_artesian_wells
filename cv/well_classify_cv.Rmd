@@ -171,6 +171,17 @@ cv_class_1900 <- cv_analysis_1900 %>%
 
 ```
 
+
+```{r}
+# Write as text file for change in head analysis (06/05/2023) 
+# modern cv
+# 1900 cv 
+
+write_tsv(cv_class_mod, here::here("change_head", "data", "modern_cv.txt"))
+
+write_tsv(cv_class_1900, here::here("change_head", "data", "1900s_cv.txt"))
+```
+
 Summary of wells per aquifer unit 
 
 ```{r}

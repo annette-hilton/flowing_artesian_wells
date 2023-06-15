@@ -258,6 +258,15 @@ confined_criteria_mod <- me_class_mod %>%
 
 ```
 
+
+```{r}
+# Write as text file for change in head analysis (06/05/2023) 
+# modern me 
+
+write_tsv(confined_criteria_mod, here::here("change_head", "data", "modern_me.txt"))
+```
+
+
 #### 1900 Data
 
 Just confining unit above
@@ -281,6 +290,13 @@ confined_criteria_1900 <- me_class_1900 %>%
            ifelse(aquifer == "lwaq" & (!is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1)), "confined", 
            ifelse(aquifer == "mdwy" & (!is.na(lccu_surf_1) | !is.na(mccu_surf_1) | !is.na(vkbg_surf_1)), "confined", "unconfined")))))))))))
 
+```
+
+```{r}
+# Write as text file for change in head analysis (06/05/2023) 
+# pre-1910 me 
+
+write_tsv(confined_criteria_1900, here::here("change_head", "data", "1900s_me.txt"))
 ```
 
 ### Accuracy check with USGS Confined/Unconfined 

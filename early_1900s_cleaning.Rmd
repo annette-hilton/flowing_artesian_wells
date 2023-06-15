@@ -55,7 +55,7 @@ na_values <- c("na", "Na", "NA")
 # specify each column type 
 # specify how to deal with NAs 
 
-jl_early1900s_raw <- readr::read_tsv(here::here("data", "1900s", "1900s_wells.txt"), 
+jl_early1900s_raw <- readr::read_tsv(here::here("data", "1900s", "1900s_wells_06.23.txt"), 
                                      col_types = list(
                                        id = col_character(),
                                        state = col_character(), 
