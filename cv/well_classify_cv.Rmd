@@ -98,6 +98,45 @@ early1900s_fromarc <- readr::read_csv(here::here("data", "cv", "cv_hist_classify
   clean_names()
 
 ```
+#### 06/16/2023--Noticed (for the first time) error that GAMA wells are in METERS for units--everything (water level, well depth, elv.). Must go back and change. 
+
+1. Made vector (`vector_meters.rds`) of site ids for all affected sites (sites that are in meters) from `modern_data_cleaning.Rmd` (line 268, datafile `ca_dem_tidy`)
+2. Loaded in this Rmd for adjustment 
+3. Code below 
+
+```{r}
+# From file that already went through CV hydrogeologic data analysis (so you do not have to redo the DEM), pull the incorrect sites out 
+# Adjust those sites values (well depth, well water level `median`) to feet (make separate columns to double check)
+
+meter_corrected <- cv_mod_fromarc %>% 
+  filter(site_no %in% c(vector_meters)) %>% 
+  mutate(well_depth_ft = well_depth_va * 3.28084) %>% 
+  mutate(median_ft = median * 3.28084)
+
+# Check is correct. Overwrite original columns (well_depth_va, median) 
+
+cv_corrected <- meter_corrected %>% 
+  mutate(well_depth_va = well_depth_ft, 
+         median = median_ft) %>% 
+  select(-well_depth_ft, -median_ft)
+
+# 6/20 test (seeing if there are any gama wells in the analysis)
+
+gama_cv_corrected <- cv_corrected %>% 
+  filter(site_no %in% c(gama_only_vector))
+
+write_tsv(gama_cv_corrected, here::here("cv", "gama_cv_only.txt"))
+
+# Create other data frame of DEM processed well sites that were not affected by the meters/feet confusion 
+selected_sites <- cv_mod_fromarc %>% 
+  filter(!site_no %in% c(vector_meters))
+
+# Merge data frames so you have your final, corrected (in feet) data 
+# Corrected meters data (`cv_corrected`) and other remaining sites (`selected_sites`) 
+
+final_cv <- rbind(cv_corrected, selected_sites)
+
+```
 
 ### CV Aquifer Information 
 
@@ -120,7 +159,7 @@ Hydrologic Model Layer Surfaces:
 
 # Modern data 
 
-cv_analysis_mod <- cv_mod_fromarc %>% 
+cv_analysis_mod <- final_cv %>% 
   mutate(topo_ft = rastervalu * 3.28084) %>% 
   mutate(well_bottom = topo_ft - well_depth_va) %>% 
    mutate(keep = 
@@ -171,16 +210,6 @@ cv_class_1900 <- cv_analysis_1900 %>%
 
 ```
 
-
-```{r}
-# Write as text file for change in head analysis (06/05/2023) 
-# modern cv
-# 1900 cv 
-
-write_tsv(cv_class_mod, here::here("change_head", "data", "modern_cv.txt"))
-
-write_tsv(cv_class_1900, here::here("change_head", "data", "1900s_cv.txt"))
-```
 
 Summary of wells per aquifer unit 
 
@@ -358,6 +387,15 @@ ggplot(ggplot_modern,
 # Modern wells 
 cv_confined_mod <- cv_modern_check %>% 
   filter(check %in% c("true_c", "no_data_c")) 
+
+## 6/20/23 UPDATE--- With the addition of the corrected (meters to feet) data from the CV/GAMA/DWR files, we have 6 confined flowing artesian wells in the modern period 
+
+artesian_mod <- cv_confined_mod %>% 
+  filter(artesian == 1)
+
+write_tsv(artesian_mod, here::here("cv", "cv_artesian_mod.txt"))
+  
+
 
 # Write as tsv 
 write_csv(cv_confined_mod, here::here("output_data", "cv", "cv_confined_mod.txt"))

@@ -26,7 +26,7 @@ The purpose of this Rmd is to:
 ```{r}
 # Attach packages 
 
-library(plyr) # Be sure to load `plyr()` first, otherwise other functions in tidyverse break! 
+# library(plyr) # Be sure to load `plyr()` first, otherwise other functions in tidyverse break! 
 library(tidyverse)
 library(here)
 library(janitor)

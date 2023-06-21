@@ -140,7 +140,7 @@ wnb <- ggplot() +
 
 wnb
 
-ggsave(plot = wnb, "wnb.eps", width = 10, height = 5, units = "in")
+ggsave(plot = wnb, "wnb.eps", path = "eps_files", width = 10, height = 5, units = "in")
 
 ```
 

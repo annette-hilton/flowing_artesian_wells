@@ -54,7 +54,7 @@ entire_usa_gw <- readr::read_tsv(here::here("data", "entire_usa_2022.txt"))
 - Indicate artesian conditions
  
  
- 2010-2021 
+2010-2021 
  
 ```{r}
 usgs_modern <- entire_usa_gw %>% 
@@ -145,7 +145,9 @@ modern_intermediate <- usgs_modern_med %>%
 
 modern_final <- modern_intermediate %>% 
   left_join(joined_tidy, by = "site_no") %>% 
-  select(-dec_lat_va.y, -dec_long_va.y)
+  select(-dec_lat_va.y, -dec_long_va.y) %>% 
+  clean_names() %>% 
+  filter(!is.na(well_depth_va))
 
 write_tsv(modern_final, here::here("data", "modern_final.txt"))
 ```
@@ -181,8 +183,8 @@ USGS Data (above)
 ```{r}
 # USGS data 
 cv_modern <- modern_final %>% 
-  filter(id.x == "ca") %>% 
-  clean_names()
+  filter(id_x == "ca") %>% 
+  clean_names() 
 ```
 
 Additional data from GAMA CA 
@@ -219,6 +221,13 @@ ca_gama_tidy <- allgama_files %>%
   mutate(date = lubridate::parse_date_time(datetime, orders = c("ymd", "ymd HMS"))) %>% 
   mutate(year = lubridate::year(date)) %>% 
   filter(year >= 2010)
+
+# test 
+
+# ca_gama_only <- ca_gama_tidy %>% 
+#   filter(db == "gama")
+# 
+# write_tsv(ca_gama_only, here::here("cv", "ca_gama_only.txt"))
   
 # Calculate median, artesian 
 
@@ -260,14 +269,41 @@ ca_dem_tidy <- cv_dem %>%
          level_year = year, 
          rastervalu = cali) %>% 
   select(site_no, dec_lat_va_x, dec_long_va_x, well_depth_va, median, level_date, level_year, 
-         id_x, artesian, rastervalu, national_aquifer_x, local_aquifer_x, code, depth_m_x)
+         id_x, artesian, rastervalu, national_aquifer_x, local_aquifer_x, code, depth_m_x) 
+
+# Correct for meters (6/20/23) 
+
+ca_dem_correct <- ca_dem_tidy %>% 
+  mutate(well_depth_va = well_depth_va * 3.28084) %>% 
+  mutate(median = median * 3.28084) 
+
+# 06/16/2023--Noticed (for the first time) error that GAMA wells are in METERS for units--everything (water level, well depth, elv.). Must go back and change. 
+
+vector_meters <- ca_dem_tidy %>% 
+  pull(site_no)
+
+vector_name_meters <- cv_dem %>% 
+  select(well_id, db) 
+
+# just_gama <- vector_name_meters %>% 
+#   filter(db == "gama") %>% 
+#   rename(site_no = well_id)
+# 
+# gama_only_vector <- just_gama %>% 
+#   pull(site_no)
+# 
+# saveRDS(gama_only_vector, file = "gama_only.rds")
+
+saveRDS(vector_meters, file = "vector_meters.rds")
+  
 ```
 
 
 ```{r}
 # Join USGS and drilling well data 
 
-cv_modern_final <- rbind(ca_dem_tidy, cv_modern)
+cv_modern_final <- rbind(ca_dem_correct, cv_modern) %>% 
+  distinct(site_no, .keep_all = TRUE)
 
 write_tsv(cv_modern_final, here::here("data", "cv", "cv_modern.txt"))
 ```
@@ -322,7 +358,7 @@ USGS Data (above)
 
 ```{r}
 sd_modern <- modern_final %>% 
-  filter(id.x == "sd") %>% 
+  filter(id_x == "sd") %>% 
   clean_names()
 ```
 
@@ -423,3 +459,25 @@ write_tsv(sd_modern_final, here::here("data", "south_dakota", "sd_modern.txt"))
 ```
  
  
+## Join ALL data (USGS, CA, SD) 
+
+```{r}
+# Modern join all data 
+
+all_modern <- rbind(sd_modern_final, ca_dem_correct, modern_final)
+
+# Identified that there are ~491 duplicates from SD obs wells that are already in the USGS database (removed) 
+
+# duplicates <- all_modern %>% 
+#   mutate(duplicate = duplicated(all_modern$site_no)) %>% 
+#   filter(duplicate == "TRUE") 
+# 
+# sd_duplicates <- duplicates %>% 
+#   filter(id_x == "sd")
+
+all_mod_distinct <- all_modern %>% 
+  distinct(site_no, .keep_all = TRUE)
+
+write_tsv(all_mod_distinct, here::here("output_data", "modern_final_06.20.23.txt"))
+```
+

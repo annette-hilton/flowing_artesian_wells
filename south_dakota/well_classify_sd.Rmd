@@ -192,6 +192,7 @@ confined_criteria_mod <- sd_class_mod %>%
 
 ```
 
+
 #### 1900 Data
 
 Just confining unit above
@@ -206,6 +207,7 @@ confined_criteria_1900 <- sd_class_1900 %>%
                      aquifer == "dakota" ~"confined", TRUE ~"NA"))
 
 ```
+
 
 ### Accuracy check with USGS Confined/Unconfined 
 
@@ -379,6 +381,7 @@ sd_confined_1900 <- confined_criteria_1900 %>%
 write_csv(sd_confined_1900, here::here("output_data", "sd", "sd_confined_historical.txt"))
 
 ```
+
 
 Final summary table of artesian conditions (percentage of flowing artesian wells) 
 

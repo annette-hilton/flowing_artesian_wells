@@ -1,7 +1,7 @@
 ---
 title: "Change in Head by Aquifer System"
 author: "Annette Hilton"
-date: '2023-06-15'
+date: '2023-06-16'
 output:
   word_document: default
   html_document: default
@@ -50,41 +50,42 @@ Regional systems will be examined by aquifer unit.
 Each aquifer unit must have at least n=25 wells in both the pre-1910 and post-2010 time periods 
 
 
-### Central Valley   
+### North Atlantic Coastal Plain  
 
 ```{r}
 # Pre-1910 clean file 
 
-early1900s_cv <- read_csv(here::here("change_head", "data", "1900s_cv.txt"))
+early1900s_nacp <- read_csv(here::here("change_head", "data", "1900s_nacp.txt"))
 
 # Modern 2010-2022 clean file 
 
-modern_cv <- read_csv(here::here("change_head", "data", "modern_cv.txt"))
+modern_nacp <- read_csv(here::here("change_head", "data", "modern_nacp.txt"))
 ```
 
-##### Aquifer units to analyze in Central Valley: 
+##### Aquifer units to analyze in North Atlantic Coastal Plain: 
 
-- Confined unit 
+- Lower Chesapeake aquifer (nacp_aq03l) 
 
-#### Confined Unit 
+#### Lower Chesapeake aquifer  
 
 Post-2010 data 
 
 ```{r}
 # Subtract median water level from topography to get the real water level 
 
-cv_mod <- modern_cv %>% 
+lca_mod <- modern_nacp %>% 
+  filter(aquifer == "nacp_aq03l") %>% 
   mutate(head = topo_ft - median) %>% 
   mutate(head_m = head*0.3048)
 
-cv_mod_clean <- cv_mod %>% 
+lca_mod_clean <- lca_mod %>% 
   select(site_no, head_m, artesian) %>% 
   mutate(time_period = "post-2010")  %>% 
   arrange(desc(head_m)) %>% 
   mutate(row = row_number()) %>% 
   mutate(x_axis = row/n())
 
-cv_mod_clean$artesian <- as.character(cv_mod_clean$artesian)
+lca_mod_clean$artesian <- as.character(lca_mod_clean$artesian)
 
 ```
 
@@ -92,14 +93,14 @@ Pre-1910 data
 
 ```{r}
 # The DEM of the artesian flowing wells will be used as minimum head 
-# Keep only records in the cv, that are confined, and what we used in our regional analysis
 
-cv_1900s <- early1900s_cv %>% 
+lca_1900s <- early1900s_nacp %>% 
+  filter(aquifer == "nacp_aq03l") %>% 
   mutate(non_art_head = topo_ft - abs(water_level_ft)) %>% 
   mutate(head = ifelse(artesian == 1, topo_ft, non_art_head)) %>%
   mutate(head_m = head*0.3048)
 
-cv_1900s_clean <- cv_1900s %>% 
+lca_1900s_clean <- lca_1900s %>% 
   select(id, head_m, artesian) %>% 
   mutate(time_period = "pre-1910") %>% 
   rename(site_no = id) %>% 
@@ -107,18 +108,18 @@ cv_1900s_clean <- cv_1900s %>%
   mutate(row = row_number()) %>% 
   mutate(x_axis = row/n())
 
-cv_1900s_clean$artesian <- as.character(cv_1900s_clean$artesian)
+lca_1900s_clean$artesian <- as.character(lca_1900s_clean$artesian)
 ```
 
 Plotting 
 
 ```{r}
 
-cv <- ggplot() + 
-  geom_point(data = cv_1900s_clean, aes(x = x_axis, y = head_m, color = artesian), size = 2.5) +
-  geom_line(data = cv_1900s_clean, aes(x = x_axis, y = head_m)) +
-  geom_point(data = cv_mod_clean, aes(x = x_axis, y = head_m, color = artesian), shape = 15, size = 2.5) +
-  geom_line(data = cv_mod_clean, aes(x = x_axis, y = head_m)) +
+lca <- ggplot() + 
+  geom_point(data = lca_1900s_clean, aes(x = x_axis, y = head_m, color = artesian), size = 2.5) +
+  geom_line(data = lca_1900s_clean, aes(x = x_axis, y = head_m)) +
+  geom_point(data = lca_mod_clean, aes(x = x_axis, y = head_m, color = artesian), shape = 15, size = 2.5) +
+  geom_line(data = lca_mod_clean, aes(x = x_axis, y = head_m)) +
   theme_minimal() +
   labs(x = "", 
        y = "Hydraulic head (meters above sea level)
@@ -128,9 +129,9 @@ cv <- ggplot() +
       panel.grid.major.x = element_blank(),
       panel.grid.minor.x = element_blank()) 
 
-cv
+lca
 
-ggsave(plot = cv, "cv.eps", path = "eps_files", width = 10, height = 5, units = "in")
+ggsave(plot = lca, "lca.eps", path = "eps_files", width = 10, height = 5, units = "in")
 
 ```
 
@@ -140,7 +141,7 @@ Summary of data
 # Final summaries 
 
 # 1900s 
-wnb_1900_summary <- wnb_1900s_clean %>%  
+lca_1900_summary <- lca_1900s_clean %>%  
   dplyr::summarise(
     mean = mean(head_m), 
     median = median(head_m),
@@ -149,7 +150,7 @@ wnb_1900_summary <- wnb_1900s_clean %>%
 
 # Modern 
 
-wnb_mod_summary <- wnb_mod_clean %>%  
+lca_mod_summary <- lca_mod_clean %>%  
   dplyr::summarise(
     mean = mean(head_m), 
     median = median(head_m),
@@ -161,8 +162,9 @@ wnb_mod_summary <- wnb_mod_clean %>%
 
 # Display knitted table 
 
-kable(wnb_1900_summary, caption = "Table 1. Columbia Plateau, head of Vantage Interbeds & Wanapum Basalt summary statistics for Pre-1910")
+kable(lca_1900_summary, caption = "Table 1. Summary statistics for Pre-1910")
 
-kable(wnb_mod_summary, caption = "Table 1. Columbia Plateau, head of Vantage Interbeds & Wanapum Basalt summary statistics for Post-2010")
+kable(lca_mod_summary, caption = "Table 1. Summary statistics for Post-2010")
 
 ```
+

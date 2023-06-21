@@ -1,0 +1,399 @@
+---
+title: "Change in Head by Aquifer System"
+author: "Annette Hilton"
+date: '2023-06-15'
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Attach Packages
+
+```{r}
+# Attach packages 
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(dplyr)
+library(knitr)
+
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+# Read in data 
+
+- By each regional aquifer system that you can analyze based on criteria (n=25 samples)
+- Data that has already been sorted in aquifer unit, contains DEM information 
+- Regional aquifer systems include: 
+  - Mississippi Embayment
+  - North Atlantic Coastal Plain 
+  - Central Valley 
+  - Dakota Aquifer System
+  - Floridan 
+  - Houston-Gulf Coast 
+  - Roswell 
+
+## Criteria for analysis 
+
+Regional systems will be examined by aquifer unit. 
+Each aquifer unit must have at least n=25 wells in both the pre-1910 and post-2010 time periods 
+
+
+### Mississippi Embayment 
+
+```{r}
+# Pre-1910 clean file 
+
+early1900s_me <- read_tsv(here::here("change_head", "data", "1900s_me.txt"))
+
+# Modern 2010-2022 clean file 
+
+modern_me <- read_tsv(here::here("change_head", "data", "modern_me.txt"))
+```
+
+##### Aquifer units to analyze in ME: 
+
+- Middle Claiborne aquifer 
+- Lower Claiborne confining unit 
+- Middle Wilcox aquifer 
+
+#### Middle Claiborne Aquifer
+
+Post-2010 data 
+
+```{r}
+# Subtract median water level from topography to get the real water level 
+
+modern_head_me <- modern_me %>% 
+  mutate(head = topo_ft - median) 
+
+# Keep only records in the mcaq, that are confined, and what we used in our regional analysis 
+
+mca_mod <- modern_head_me %>% 
+  filter(aquifer == "mcaq") %>% 
+  filter(status == "confined") %>% 
+  filter(!grepl("Unconfined single aquifer", code)) %>% 
+  select(-vkbg_surf:-mdwy_surf) %>% 
+  mutate(head_m = head*0.3048)
+
+mca_mod_clean <- mca_mod %>% 
+  select(site_no, head_m, artesian) %>% 
+  mutate(time_period = "post-2010")  %>% 
+  arrange(desc(head_m)) %>% 
+  mutate(row = row_number()) %>% 
+  mutate(x_axis = row/n())
+
+mca_mod_clean$artesian <- as.character(mca_mod_clean$artesian)
+
+```
+
+Pre-1910 data
+
+```{r}
+# The DEM of the artesian flowing wells will be used as minimum head 
+# Keep only records in the mcaq, that are confined, and what we used in our regional analysis
+
+mca_1900s <- early1900s_me %>% 
+  filter(aquifer == "mcaq") %>% 
+  filter(status == "confined") %>% 
+  mutate(non_art_head = topo_ft - abs(water_level_ft)) %>% 
+  mutate(head = ifelse(artesian == 1, topo_ft, non_art_head)) %>% 
+  select(-vkbg_surf_1:-mdwy_surf_1) %>% 
+  mutate(head_m = head*0.3048)
+
+mca_1900s_clean <- mca_1900s %>% 
+  select(id, head_m, artesian) %>% 
+  mutate(time_period = "pre-1910") %>% 
+  rename(site_no = id) %>% 
+  arrange(desc(head_m)) %>% 
+  mutate(row = row_number()) %>% 
+  mutate(x_axis = row/n())
+
+mca_1900s_clean$artesian <- as.character(mca_1900s_clean$artesian)
+```
+
+Plotting 
+
+```{r}
+
+mca <- ggplot() + 
+  geom_point(data = mca_1900s_clean, aes(x = x_axis, y = head_m, color = artesian), size = 2.5) +
+  geom_line(data = mca_1900s_clean, aes(x = x_axis, y = head_m)) +
+  geom_point(data = mca_mod_clean, aes(x = x_axis, y = head_m, color = artesian), shape = 15, size = 2.5) +
+  geom_line(data = mca_mod_clean, aes(x = x_axis, y = head_m)) +
+  theme_minimal() +
+  labs(x = "", 
+       y = "Hydraulic head (meters above sea level)
+       ") +
+  theme(axis.text.x=element_blank(),
+      axis.ticks.x=element_blank(), 
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank()) +
+  scale_y_continuous(limits = c(-60, 150))
+
+mca
+
+ggsave(plot = mca, "mca.eps", path = "eps_files", width = 10, height = 5, units = "in")
+
+```
+
+Summary of data 
+
+```{r}
+# Final summaries 
+
+# 1900s 
+mca_1900_summary <- mca_1900s_clean %>%  
+  dplyr::summarise(
+    mean = mean(head_m), 
+    median = median(head_m),
+    standard_deviation = sd(head_m)
+    )
+
+# Modern 
+
+mca_mod_summary <- mca_mod_clean %>%  
+  dplyr::summarise(
+    mean = mean(head_m), 
+    median = median(head_m),
+    standard_deviation = sd(head_m)
+    )
+```
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(mca_1900_summary, caption = "Table 1. Mississippi Embayment, head of Middle Claiborne aquifer summary statistics for Pre-1910")
+
+kable(mca_mod_summary, caption = "Table 1. Mississippi Embayment, head of Middle Claiborne aquifer summary statistics for Post-2010")
+
+```
+
+#### Lower Claiborne Confining Unit 
+
+Post-2010 data 
+
+```{r}
+# Keep only records in the mcaq, that are confined, and what we used in our regional analysis 
+
+lccu_mod <- modern_head_me %>% 
+  filter(aquifer == "lccu") %>% 
+  filter(status == "confined") %>% 
+  filter(!grepl("Unconfined single aquifer", code)) %>% 
+  select(-vkbg_surf:-mdwy_surf) %>% 
+  mutate(head_m = head*0.3048)
+
+lccu_mod_clean <- lccu_mod %>% 
+  select(site_no, head_m, artesian) %>% 
+  mutate(time_period = "post-2010")  %>% 
+  arrange(desc(head_m)) %>% 
+  mutate(row = row_number()) %>% 
+  mutate(x_axis = row/n())
+
+lccu_mod_clean$artesian <- as.character(lccu_mod_clean$artesian)
+
+```
+
+Pre-1910 data
+
+```{r}
+# The DEM of the artesian flowing wells will be used as minimum head 
+# Keep only records in the mcaq, that are confined, and what we used in our regional analysis
+
+lccu_1900s <- early1900s_me %>% 
+  filter(aquifer == "lccu") %>% 
+  filter(status == "confined") %>% 
+  mutate(non_art_head = topo_ft - abs(water_level_ft)) %>% 
+  mutate(head = ifelse(artesian == 1, topo_ft, non_art_head)) %>% 
+  select(-vkbg_surf_1:-mdwy_surf_1) %>% 
+  mutate(head_m = head*0.3048)
+
+lccu_1900s_clean <- lccu_1900s %>% 
+  select(id, head_m, artesian) %>% 
+  mutate(time_period = "pre-1910") %>% 
+  rename(site_no = id) %>% 
+  arrange(desc(head_m)) %>% 
+  mutate(row = row_number()) %>% 
+  mutate(x_axis = row/n())
+
+lccu_1900s_clean$artesian <- as.character(lccu_1900s_clean$artesian)
+
+```
+
+Plotting 
+
+```{r}
+
+lccu <- ggplot() + 
+  geom_point(data = lccu_1900s_clean, aes(x = x_axis, y = head_m, color = artesian), size = 2.5) +
+  geom_line(data = lccu_1900s_clean, aes(x = x_axis, y = head_m)) +
+  geom_point(data = lccu_mod_clean, aes(x = x_axis, y = head_m, color = artesian), shape = 15, size = 2.5) +
+  geom_line(data = lccu_mod_clean, aes(x = x_axis, y = head_m)) +
+  theme_minimal() +
+  labs(x = "", 
+       y = "Hydraulic head (meters above sea level)
+       ") +
+  theme(axis.text.x=element_blank(),
+      axis.ticks.x=element_blank(), 
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank()) +
+  scale_y_continuous(limits = c(-60, 150))
+
+lccu
+
+ggsave(plot = lccu, "lccu.eps", path = "eps_files", width = 10, height = 5, units = "in")
+
+```
+
+Summary of data 
+
+```{r}
+# Final summaries 
+
+# 1900s 
+lccu_1900_summary <- lccu_1900s_clean %>%  
+  dplyr::summarise(
+    mean = mean(head_m), 
+    median = median(head_m),
+    standard_deviation = sd(head_m)
+    )
+
+# Modern 
+
+lccu_mod_summary <- lccu_mod_clean %>%  
+  dplyr::summarise(
+    mean = mean(head_m), 
+    median = median(head_m),
+    standard_deviation = sd(head_m)
+    )
+```
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(lccu_1900_summary, caption = "Table 1. Mississippi Embayment, head of Lower Claiborne Confining unit summary statistics for Pre-1910")
+
+kable(lccu_mod_summary, caption = "Table 1. Mississippi Embayment, head of Lower Claiborne Confining unit summary statistics for Post-2010")
+
+```
+
+#### Middle Wilcox Aquifer  
+
+Post-2010 data 
+
+```{r}
+# Keep only records in the mcaq, that are confined, and what we used in our regional analysis 
+
+mwaq_mod <- modern_head_me %>% 
+  filter(aquifer == "mwaq") %>% 
+  filter(status == "confined") %>% 
+  filter(!grepl("Unconfined single aquifer", code)) %>% 
+  select(-vkbg_surf:-mdwy_surf) %>% 
+  mutate(head_m = head*0.3048)
+
+mwaq_mod_clean <- mwaq_mod %>% 
+  select(site_no, head_m, artesian) %>% 
+  mutate(time_period = "post-2010")  %>% 
+  arrange(desc(head_m)) %>% 
+  mutate(row = row_number()) %>% 
+  mutate(x_axis = row/n())
+
+mwaq_mod_clean$artesian <- as.character(mwaq_mod_clean$artesian)
+
+```
+
+Pre-1910 data
+
+```{r}
+# The DEM of the artesian flowing wells will be used as minimum head 
+# Keep only records in the mcaq, that are confined, and what we used in our regional analysis
+
+mwaq_1900s <- early1900s_me %>% 
+  filter(aquifer == "mwaq") %>% 
+  filter(status == "confined") %>% 
+  mutate(non_art_head = topo_ft - abs(water_level_ft)) %>% 
+  mutate(head = ifelse(artesian == 1, topo_ft, non_art_head)) %>% 
+  select(-vkbg_surf_1:-mdwy_surf_1) %>% 
+  mutate(head_m = head*0.3048)
+
+mwaq_1900s_clean <- mwaq_1900s %>% 
+  select(id, head_m, artesian) %>% 
+  mutate(time_period = "pre-1910") %>% 
+  rename(site_no = id) %>% 
+  arrange(desc(head_m)) %>% 
+  mutate(row = row_number()) %>% 
+  mutate(x_axis = row/n())
+
+mwaq_1900s_clean$artesian <- as.character(mwaq_1900s_clean$artesian)
+
+```
+
+Plotting 
+
+```{r}
+
+mwaq <- ggplot() + 
+  geom_point(data = mwaq_1900s_clean, aes(x = x_axis, y = head_m, color = artesian), size = 2.5) +
+  geom_line(data = mwaq_1900s_clean, aes(x = x_axis, y = head_m)) +
+  geom_point(data = mwaq_mod_clean, aes(x = x_axis, y = head_m, color = artesian), shape = 15, size = 2.5) +
+  geom_line(data = mwaq_mod_clean, aes(x = x_axis, y = head_m)) +
+  theme_minimal() +
+  labs(x = "", 
+       y = "Hydraulic head (meters above sea level)
+       ") +
+  theme(axis.text.x=element_blank(),
+      axis.ticks.x=element_blank(), 
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank()) +
+  scale_y_continuous(limits = c(-60, 150))
+
+mwaq
+
+ggsave(plot = mwaq, "mwaq.eps", path = "eps_files", width = 10, height = 5, units = "in")
+
+```
+
+Summary of data 
+
+```{r}
+# Final summaries 
+
+# 1900s 
+mwaq_1900_summary <- mwaq_1900s_clean %>%  
+  dplyr::summarise(
+    mean = mean(head_m), 
+    median = median(head_m),
+    standard_deviation = sd(head_m)
+    )
+
+# Modern 
+
+mwaq_mod_summary <- mwaq_mod_clean %>%  
+  dplyr::summarise(
+    mean = mean(head_m), 
+    median = median(head_m),
+    standard_deviation = sd(head_m)
+    )
+```
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(mwaq_1900_summary, caption = "Table 1. Mississippi Embayment, head of Middle Wilcox aquifer summary statistics for Pre-1910")
+
+kable(mwaq_mod_summary, caption = "Table 1. Mississippi Embayment, head of Middle Wilcox aquifer summary statistics for Post-2010")
+
+```

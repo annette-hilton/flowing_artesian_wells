@@ -1,0 +1,274 @@
+---
+title: "Change in Head by Aquifer System"
+author: "Annette Hilton"
+date: '2023-06-16'
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Attach Packages
+
+```{r}
+# Attach packages 
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(dplyr)
+library(knitr)
+
+
+# Disable scientific notation 
+
+options(scipen=999)
+```
+
+# Read in data 
+
+- By each regional aquifer system that you can analyze based on criteria (n=25 samples)
+- Data that has already been sorted in aquifer unit, contains DEM information 
+- Regional aquifer systems include: 
+  - Mississippi Embayment
+  - North Atlantic Coastal Plain 
+  - Central Valley 
+  - Dakota Aquifer System
+  - Floridan 
+  - Houston-Gulf Coast 
+  - Roswell
+  - Columbia Plateau 
+
+## Criteria for analysis 
+
+Regional systems will be examined by aquifer unit. 
+Each aquifer unit must have at least n=25 wells in both the pre-1910 and post-2010 time periods 
+
+
+### Floridan Aquifer System    
+
+```{r}
+# Pre-1910 clean file 
+
+early1900s_fl <- read_csv(here::here("change_head", "data", "1900s_fl.txt"))
+
+# Modern 2010-2022 clean file 
+
+modern_fl <- read_csv(here::here("change_head", "data", "modern_fl.txt"))
+```
+
+##### Aquifer units to analyze in Floridan: 
+
+- Upper Floridan 
+- Lower Floridan 
+
+#### Upper Floridan  
+
+Post-2010 data 
+
+```{r}
+# Subtract median water level from topography to get the real water level 
+
+ufl_mod <- modern_fl %>% 
+  filter(aquifer == "upper_fl") %>% 
+  mutate(head = topo_ft - median) %>% 
+  mutate(head_m = head*0.3048)
+
+ufl_mod_clean <- ufl_mod %>% 
+  select(site_no, head_m, artesian) %>% 
+  mutate(time_period = "post-2010")  %>% 
+  arrange(desc(head_m)) %>% 
+  mutate(row = row_number()) %>% 
+  mutate(x_axis = row/n())
+
+ufl_mod_clean$artesian <- as.character(ufl_mod_clean$artesian)
+
+```
+
+Pre-1910 data
+
+```{r}
+# The DEM of the artesian flowing wells will be used as minimum head 
+
+ufl_1900s <- early1900s_fl %>% 
+  filter(aquifer == "upper_fl") %>% 
+  mutate(non_art_head = topo_ft - abs(water_level_ft)) %>% 
+  mutate(head = ifelse(artesian == 1, topo_ft, non_art_head)) %>%
+  mutate(head_m = head*0.3048)
+
+ufl_1900s_clean <- ufl_1900s %>% 
+  select(id, head_m, artesian) %>% 
+  mutate(time_period = "pre-1910") %>% 
+  rename(site_no = id) %>% 
+  arrange(desc(head_m)) %>% 
+  mutate(row = row_number()) %>% 
+  mutate(x_axis = row/n())
+
+ufl_1900s_clean$artesian <- as.character(ufl_1900s_clean$artesian)
+```
+
+Plotting 
+
+```{r}
+
+ufl <- ggplot() + 
+  geom_point(data = ufl_1900s_clean, aes(x = x_axis, y = head_m, color = artesian), size = 2.5) +
+  geom_line(data = ufl_1900s_clean, aes(x = x_axis, y = head_m)) +
+  geom_point(data = ufl_mod_clean, aes(x = x_axis, y = head_m, color = artesian), shape = 15, size = 2.5) +
+  geom_line(data = ufl_mod_clean, aes(x = x_axis, y = head_m)) +
+  theme_minimal() +
+  labs(x = "", 
+       y = "Hydraulic head (meters above sea level)
+       ") +
+  theme(axis.text.x=element_blank(),
+      axis.ticks.x=element_blank(), 
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank()) +
+      scale_y_continuous(limits = c(-50, 150))
+
+ufl
+
+ggsave(plot = ufl, "ufl.eps", path = "eps_files", width = 10, height = 5, units = "in")
+
+```
+
+Summary of data 
+
+```{r}
+# Final summaries 
+
+# 1900s 
+ufl_1900_summary <- ufl_1900s_clean %>%  
+  dplyr::summarise(
+    mean = mean(head_m), 
+    median = median(head_m),
+    standard_deviation = sd(head_m)
+    )
+
+# Modern 
+
+ufl_mod_summary <- ufl_mod_clean %>%  
+  dplyr::summarise(
+    mean = mean(head_m), 
+    median = median(head_m),
+    standard_deviation = sd(head_m)
+    )
+```
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(ufl_1900_summary, caption = "Table 1. Summary statistics for Pre-1910")
+
+kable(ufl_mod_summary, caption = "Table 1. Summary statistics for Post-2010")
+
+```
+
+#### Lower Floridan  
+
+Post-2010 data 
+
+```{r}
+# Subtract median water level from topography to get the real water level 
+
+lfl_mod <- modern_fl %>% 
+  filter(aquifer == "lower_fl") %>% 
+  mutate(head = topo_ft - median) %>% 
+  mutate(head_m = head*0.3048)
+
+lfl_mod_clean <- lfl_mod %>% 
+  select(site_no, head_m, artesian, rastervalu) %>% 
+  mutate(time_period = "post-2010")  %>% 
+  arrange(desc(head_m)) %>% 
+  mutate(row = row_number()) %>% 
+  mutate(x_axis = row/n())
+
+lfl_mod_clean$artesian <- as.character(lfl_mod_clean$artesian)
+
+```
+
+Pre-1910 data
+
+```{r}
+# The DEM of the artesian flowing wells will be used as minimum head 
+
+lfl_1900s <- early1900s_fl %>% 
+  filter(aquifer == "lower_fl") %>% 
+  mutate(non_art_head = topo_ft - abs(water_level_ft)) %>% 
+  mutate(head = ifelse(artesian == 1, topo_ft, non_art_head)) %>%
+  mutate(head_m = head*0.3048)
+
+lfl_1900s_clean <- lfl_1900s %>% 
+  select(id, head_m, artesian) %>% 
+  mutate(time_period = "pre-1910") %>% 
+  rename(site_no = id) %>% 
+  arrange(desc(head_m)) %>% 
+  mutate(row = row_number()) %>% 
+  mutate(x_axis = row/n())
+
+lfl_1900s_clean$artesian <- as.character(lfl_1900s_clean$artesian)
+```
+
+Plotting 
+
+```{r}
+
+lfl <- ggplot() + 
+  geom_point(data = lfl_1900s_clean, aes(x = x_axis, y = head_m, color = artesian), size = 2.5) +
+  geom_line(data = lfl_1900s_clean, aes(x = x_axis, y = head_m)) +
+  geom_point(data = lfl_mod_clean, aes(x = x_axis, y = head_m, color = artesian), shape = 15, size = 2.5) +
+  geom_line(data = lfl_mod_clean, aes(x = x_axis, y = head_m)) +
+  theme_minimal() +
+  labs(x = "", 
+       y = "Hydraulic head (meters above sea level)
+       ") +
+  theme(axis.text.x=element_blank(),
+      axis.ticks.x=element_blank(), 
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank()) +
+      scale_y_continuous(limits = c(-50, 150))
+
+lfl
+
+ggsave(plot = lfl, "lfl.eps", path = "eps_files", width = 10, height = 5, units = "in")
+
+```
+
+Summary of data 
+
+```{r}
+# Final summaries 
+
+# 1900s 
+lfl_1900_summary <- lfl_1900s_clean %>%  
+  dplyr::summarise(
+    mean = mean(head_m), 
+    median = median(head_m),
+    standard_deviation = sd(head_m)
+    )
+
+# Modern 
+
+lfl_mod_summary <- lfl_mod_clean %>%  
+  dplyr::summarise(
+    mean = mean(head_m), 
+    median = median(head_m),
+    standard_deviation = sd(head_m)
+    )
+```
+
+```{r echo = FALSE, results = 'asis'}
+
+# Display knitted table 
+
+kable(lfl_1900_summary, caption = "Table 1. Summary statistics for Pre-1910")
+
+kable(lfl_mod_summary, caption = "Table 1. Summary statistics for Post-2010")
+
+```
