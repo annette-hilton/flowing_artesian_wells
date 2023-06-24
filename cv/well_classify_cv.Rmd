@@ -122,10 +122,10 @@ cv_corrected <- meter_corrected %>%
 
 # 6/20 test (seeing if there are any gama wells in the analysis)
 
-gama_cv_corrected <- cv_corrected %>% 
-  filter(site_no %in% c(gama_only_vector))
-
-write_tsv(gama_cv_corrected, here::here("cv", "gama_cv_only.txt"))
+# gama_cv_corrected <- cv_corrected %>% 
+#   filter(site_no %in% c(gama_only_vector))
+# 
+# write_tsv(gama_cv_corrected, here::here("cv", "gama_cv_only.txt"))
 
 # Create other data frame of DEM processed well sites that were not affected by the meters/feet confusion 
 selected_sites <- cv_mod_fromarc %>% 
@@ -390,10 +390,10 @@ cv_confined_mod <- cv_modern_check %>%
 
 ## 6/20/23 UPDATE--- With the addition of the corrected (meters to feet) data from the CV/GAMA/DWR files, we have 6 confined flowing artesian wells in the modern period 
 
-artesian_mod <- cv_confined_mod %>% 
-  filter(artesian == 1)
-
-write_tsv(artesian_mod, here::here("cv", "cv_artesian_mod.txt"))
+# artesian_mod <- cv_confined_mod %>% 
+#   filter(artesian == 1)
+# 
+# write_tsv(artesian_mod, here::here("cv", "cv_artesian_mod.txt"))
   
 
 

@@ -55,11 +55,11 @@ Each aquifer unit must have at least n=25 wells in both the pre-1910 and post-20
 ```{r}
 # Pre-1910 clean file 
 
-early1900s_cv <- read_csv(here::here("change_head", "data", "1900s_cv.txt"))
+early1900s_cv <- read_csv(here::here("change_head", "data", "cv_confined_historical.txt"))
 
 # Modern 2010-2022 clean file 
 
-modern_cv <- read_csv(here::here("change_head", "data", "modern_cv.txt"))
+modern_cv <- read_csv(here::here("change_head", "data", "cv_confined_mod.txt"))
 ```
 
 ##### Aquifer units to analyze in Central Valley: 
@@ -81,8 +81,9 @@ cv_mod_clean <- cv_mod %>%
   select(site_no, head_m, artesian) %>% 
   mutate(time_period = "post-2010")  %>% 
   arrange(desc(head_m)) %>% 
+  filter(!is.na(head_m)) %>% 
   mutate(row = row_number()) %>% 
-  mutate(x_axis = row/n())
+  mutate(x_axis = row/n())  
 
 cv_mod_clean$artesian <- as.character(cv_mod_clean$artesian)
 
@@ -103,9 +104,10 @@ cv_1900s_clean <- cv_1900s %>%
   select(id, head_m, artesian) %>% 
   mutate(time_period = "pre-1910") %>% 
   rename(site_no = id) %>% 
+  filter(!is.na(head_m)) %>% 
   arrange(desc(head_m)) %>% 
   mutate(row = row_number()) %>% 
-  mutate(x_axis = row/n())
+  mutate(x_axis = row/n()) 
 
 cv_1900s_clean$artesian <- as.character(cv_1900s_clean$artesian)
 ```
@@ -140,7 +142,7 @@ Summary of data
 # Final summaries 
 
 # 1900s 
-wnb_1900_summary <- wnb_1900s_clean %>%  
+cv_1900_summary <- cv_1900s_clean %>%  
   dplyr::summarise(
     mean = mean(head_m), 
     median = median(head_m),
@@ -149,7 +151,7 @@ wnb_1900_summary <- wnb_1900s_clean %>%
 
 # Modern 
 
-wnb_mod_summary <- wnb_mod_clean %>%  
+cv_mod_summary <- cv_mod_clean %>%  
   dplyr::summarise(
     mean = mean(head_m), 
     median = median(head_m),
@@ -161,8 +163,8 @@ wnb_mod_summary <- wnb_mod_clean %>%
 
 # Display knitted table 
 
-kable(wnb_1900_summary, caption = "Table 1. Columbia Plateau, head of Vantage Interbeds & Wanapum Basalt summary statistics for Pre-1910")
+kable(cv_1900_summary, caption = "Table 1. Hydraulic head summary statistics for Pre-1910")
 
-kable(wnb_mod_summary, caption = "Table 1. Columbia Plateau, head of Vantage Interbeds & Wanapum Basalt summary statistics for Post-2010")
+kable(cv_mod_summary, caption = "Table 1. Hydraulic head summary statistics for Post-2010")
 
 ```
